@@ -27,7 +27,7 @@ export async function sendBookingConfirmation(data: BookingEmailData) {
   const html = `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
       <div style="background:#c8861e;padding:24px;border-radius:12px 12px 0 0;">
-        <h1 style="color:white;margin:0;font-size:24px;">Camilo Catering</h1>
+        <h1 style="color:white;margin:0;font-size:24px;">Camilo's Catering</h1>
       </div>
       <div style="background:#fff;padding:32px;border:1px solid #e5e5e5;border-top:none;border-radius:0 0 12px 12px;">
         <h2 style="color:#171717;margin-top:0;">Booking ${data.status}</h2>

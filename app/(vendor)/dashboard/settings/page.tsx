@@ -15,7 +15,7 @@ export default async function SettingsPage() {
 
   if (!settings) {
     settings = await CompanySettings.create({
-      name: "Camilo Catering",
+      name: "Camilo's Catering",
       tagline: "Premium Catering for Every Occasion",
     });
   }

@@ -8,8 +8,8 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: {
-    default: "Camilo Catering",
-    template: "%s | Camilo Catering",
+    default: "Camilo's Catering",
+    template: "%s | Camilo's Catering",
   },
   description: "Premium multi-tenant event catering booking platform",
   keywords: ["catering", "events", "wedding", "booking", "Philippines"],

@@ -43,7 +43,7 @@ const testimonials = [
   {
     name: "Maria Santos",
     event: "Wedding Reception",
-    text: "Camilo Catering made our wedding absolutely perfect. The food was exquisite and the service was flawless from start to finish.",
+    text: "Camilo's Catering made our wedding absolutely perfect. The food was exquisite and the service was flawless from start to finish.",
   },
   {
     name: "Jose Reyes",
@@ -71,7 +71,7 @@ export default function HomePage() {
             <Star className="h-3.5 w-3.5 fill-amber-400" /> Premium Catering Services Since 2009
           </div>
           <h1 className="text-5xl sm:text-7xl font-bold text-white leading-tight mb-6">
-            Camilo
+            Camilo&apos;s
             <span className="block text-amber-400">Catering</span>
           </h1>
           <p className="text-xl text-neutral-300 max-w-2xl mx-auto mb-10 leading-relaxed">
@@ -146,7 +146,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
               <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-white mb-6">
-                Why Choose Camilo Catering?
+                Why Choose Camilo&apos;s Catering?
               </h2>
               <div className="flex flex-col gap-5">
                 {[

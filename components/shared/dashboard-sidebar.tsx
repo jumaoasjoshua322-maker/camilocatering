@@ -41,11 +41,11 @@ export function DashboardSidebar({ role, mobileOpen, onMobileClose }: Props) {
       <div className="flex h-16 items-center justify-between px-4 border-b border-neutral-200 dark:border-neutral-800">
         {!collapsed && (
           <Link href="/" className="flex min-w-0 items-center gap-2" onClick={onMobileClose}>
-            <div className="w-7 h-7 rounded-lg bg-amber-600 flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 via-orange-600 to-amber-700 flex items-center justify-center flex-shrink-0 shadow-sm">
               <ChefHat className="h-4 w-4 text-white" />
             </div>
-            <span className="truncate font-bold text-sm text-neutral-900 dark:text-white">
-              Camilo Catering
+            <span className="truncate text-sm font-extrabold tracking-tight text-neutral-950 dark:text-white">
+              Camilo&apos;s <span className="text-amber-600">Catering</span>
             </span>
           </Link>
         )}

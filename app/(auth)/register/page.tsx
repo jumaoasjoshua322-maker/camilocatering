@@ -61,7 +61,7 @@ export default function RegisterPage() {
     <Card className="w-full max-w-md shadow-xl">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Create an account</CardTitle>
-        <CardDescription>Join Camilo Catering today</CardDescription>
+        <CardDescription>Join Camilo&apos;s Catering today</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

@@ -6,7 +6,7 @@ interface Props {
   searchParams: Promise<{ packageId?: string }>;
 }
 
-export const metadata = { title: "Book a Service — Camilo Catering" };
+export const metadata = { title: "Book a Service - Camilo's Catering" };
 
 export default async function BookingPage({ searchParams }: Props) {
   const { packageId } = await searchParams;

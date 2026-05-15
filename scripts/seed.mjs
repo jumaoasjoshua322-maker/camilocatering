@@ -83,7 +83,7 @@ async function seed() {
 
   // ── Company Settings ──────────────────────────────────────────────────────
   await CompanySettings.create({
-    name: "Camilo Catering",
+    name: "Camilo's Catering",
     tagline: "Premium Catering for Every Occasion",
     description: "Award-winning catering services for weddings, corporate events, and celebrations. Serving Metro Manila since 2009.",
     phone: "+63 917 123 4567",

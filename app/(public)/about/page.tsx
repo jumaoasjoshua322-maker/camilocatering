@@ -31,7 +31,7 @@ export default function AboutPage() {
       {/* Hero */}
       <div className="text-center mb-16">
         <h1 className="text-4xl sm:text-5xl font-bold text-neutral-900 dark:text-white mb-6">
-          About Camilo Catering
+          About Camilo&apos;s Catering
         </h1>
         <p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-3xl mx-auto leading-relaxed">
           Since 2009, we've been serving Metro Manila with premium catering services that turn
@@ -49,7 +49,7 @@ export default function AboutPage() {
           <h2 className="text-3xl font-bold text-neutral-900 dark:text-white mb-4">Our Story</h2>
           <div className="flex flex-col gap-4 text-neutral-600 dark:text-neutral-400">
             <p>
-              Camilo Catering was founded by Chef Camilo Rodriguez, a culinary graduate from the
+              Camilo&apos;s Catering was founded by Chef Camilo Rodriguez, a culinary graduate from the
               prestigious Culinary Institute of America. After years of working in five-star hotels
               and restaurants, Chef Camilo saw an opportunity to bring restaurant-quality food to
               private events.

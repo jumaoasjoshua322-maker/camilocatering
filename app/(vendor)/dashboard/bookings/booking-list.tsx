@@ -281,7 +281,7 @@ function BookingCard({
             )}
             {role === "customer" && booking.vendorName && (
               <p className="text-sm text-neutral-500 mb-2">
-                Camilo Catering
+                Camilo&apos;s Catering
               </p>
             )}
 

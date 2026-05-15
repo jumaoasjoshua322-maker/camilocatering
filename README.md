@@ -1,4 +1,4 @@
-# Camilo Catering — Production SaaS Platform
+# Camilo's Catering - Production SaaS Platform
 
 A complete single-company event catering booking platform built with Next.js 14, TypeScript, MongoDB, and PayMongo.
 

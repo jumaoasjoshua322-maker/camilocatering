@@ -29,13 +29,17 @@ export function Navbar() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-amber-600 flex items-center justify-center shadow-sm">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 via-orange-600 to-amber-700 flex items-center justify-center shadow-sm ring-1 ring-amber-200/70 dark:ring-amber-900/50">
               <ChefHat className="h-5 w-5 text-white" />
             </div>
-            <div className="hidden sm:block">
-              <span className="font-bold text-neutral-900 dark:text-white">Camilo</span>
-              <span className="text-amber-600 font-bold"> Catering</span>
+            <div className="hidden sm:flex flex-col leading-none">
+              <span className="text-base font-extrabold tracking-tight text-neutral-950 dark:text-white">
+                Camilo&apos;s
+              </span>
+              <span className="mt-0.5 text-xs font-semibold uppercase tracking-[0.18em] text-amber-600">
+                Catering
+              </span>
             </div>
           </Link>
 

@@ -6,7 +6,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       <Navbar />
       <main className="flex-1">{children}</main>
       <footer className="border-t border-neutral-200 dark:border-neutral-800 py-8 text-center text-sm text-neutral-500">
-        © {new Date().getFullYear()} Camilo Catering. All rights reserved.
+        &copy; {new Date().getFullYear()} Camilo&apos;s Catering. All rights reserved.
       </footer>
     </div>
   );

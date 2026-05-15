@@ -18,7 +18,7 @@ export interface CompanySettingsDocument extends Document {
 
 const CompanySettingsSchema = new Schema<CompanySettingsDocument>(
   {
-    name: { type: String, default: "Camilo Catering" },
+    name: { type: String, default: "Camilo's Catering" },
     tagline: { type: String, default: "Premium Catering for Every Occasion" },
     description: { type: String, default: "" },
     phone: { type: String, default: "" },

@@ -50,7 +50,7 @@ export async function createPaymentIntent(data: PaymentIntentData): Promise<Paym
             card: { request_three_d_secure: "any" },
           },
           description: data.description,
-          statement_descriptor: "Camilo Catering",
+          statement_descriptor: "CAMILOS CATERING",
           metadata: data.metadata,
         },
       },

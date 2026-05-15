@@ -1,0 +1,44 @@
+import mongoose, { Schema, Document, Model } from "mongoose";
+import type { BookingStatus } from "@/types";
+
+export interface BookingDocument extends Document {
+  customerId: mongoose.Types.ObjectId;
+  packageId: mongoose.Types.ObjectId;
+  eventDate: Date;
+  guestCount: number;
+  venue: string;
+  status: BookingStatus;
+  totalAmount: number;
+  notes?: string;
+  paymentId?: mongoose.Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const BookingSchema = new Schema<BookingDocument>(
+  {
+    customerId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    packageId: { type: Schema.Types.ObjectId, ref: "Package", required: true },
+    eventDate: { type: Date, required: true },
+    guestCount: { type: Number, required: true, min: 1 },
+    venue: { type: String, required: true },
+    status: {
+      type: String,
+      enum: ["PENDING", "CONFIRMED", "PAID", "COMPLETED", "CANCELLED"],
+      default: "PENDING",
+    },
+    totalAmount: { type: Number, required: true },
+    notes: { type: String },
+    paymentId: { type: Schema.Types.ObjectId, ref: "Payment" },
+  },
+  { timestamps: true }
+);
+
+BookingSchema.index({ status: 1, eventDate: 1 });
+BookingSchema.index({ customerId: 1, status: 1 });
+
+const Booking: Model<BookingDocument> =
+  mongoose.models.Booking ??
+  mongoose.model<BookingDocument>("Booking", BookingSchema);
+
+export default Booking;

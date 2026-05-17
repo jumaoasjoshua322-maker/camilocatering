@@ -28,7 +28,7 @@ export async function PATCH(req: NextRequest) {
     await connectDB();
     const settings = await CompanySettings.findOneAndUpdate(
       {},
-      { $set: body },
+      { $set: parsed.data },
       { new: true, upsert: true }
     );
 

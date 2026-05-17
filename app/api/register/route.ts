@@ -4,9 +4,14 @@ import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import { registerSchema } from "@/lib/validations";
 import { successResponse, errorResponse } from "@/lib/api-response";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    const limited = rateLimit(`register:${ip}`, 5, 15 * 60 * 1000);
+    if (!limited.allowed) return errorResponse("Too many registration attempts. Please try again later.", 429);
+
     const body = await req.json();
     const parsed = registerSchema.safeParse(body);
     if (!parsed.success) return errorResponse(parsed.error.issues[0].message);

@@ -119,7 +119,7 @@ export default function RegisterPage() {
             <Input
               id="password"
               type="password"
-              placeholder="Min. 8 characters"
+              placeholder="Min. 12 chars, uppercase and number"
               value={values.password}
               onChange={handleChange("password")}
               error={errors.password}

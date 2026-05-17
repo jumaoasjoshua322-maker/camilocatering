@@ -5,6 +5,7 @@ import User from "@/models/User";
 import { requireAuth } from "@/lib/rbac";
 import { sendBookingConfirmation } from "@/services/email";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { isValidObjectId } from "@/lib/mongo";
 import {
   successResponse, errorResponse, unauthorizedResponse,
   forbiddenResponse, notFoundResponse,
@@ -25,6 +26,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    if (!isValidObjectId(id)) return notFoundResponse("Booking");
     const user = await requireAuth();
     if (!user) return unauthorizedResponse();
 
@@ -54,11 +56,13 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
+    if (!isValidObjectId(id)) return notFoundResponse("Booking");
     const user = await requireAuth();
     if (!user) return unauthorizedResponse();
 
     const { status } = await req.json() as { status: BookingStatus };
     if (!status) return errorResponse("Status is required");
+    if (!(status in TRANSITIONS)) return errorResponse("Invalid booking status");
 
     await connectDB();
     const booking = await Booking.findById(id).populate("packageId", "name").populate("customerId", "name email");

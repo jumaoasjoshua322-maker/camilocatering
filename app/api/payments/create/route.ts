@@ -3,15 +3,21 @@ import { connectDB } from "@/lib/db";
 import Booking from "@/models/Booking";
 import Payment from "@/models/Payment";
 import { requireAuth } from "@/lib/rbac";
+import { isValidObjectId } from "@/lib/mongo";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { successResponse, errorResponse, unauthorizedResponse, notFoundResponse } from "@/lib/api-response";
 
 export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth();
     if (!user) return unauthorizedResponse();
+    const ip = getClientIp(req);
+    const limited = rateLimit(`payment:${ip}:${user.id}`, 20, 15 * 60 * 1000);
+    if (!limited.allowed) return errorResponse("Too many payment attempts. Please try again later.", 429);
 
     const { bookingId } = await req.json();
     if (!bookingId) return errorResponse("Booking ID is required");
+    if (!isValidObjectId(bookingId)) return notFoundResponse("Booking");
 
     await connectDB();
 

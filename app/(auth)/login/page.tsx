@@ -51,7 +51,12 @@ function LoginForm() {
     const role = session?.user?.role;
     const fallbackUrl = role === "ADMIN" || role === "STAFF" ? "/dashboard" : "/bookings";
 
-    router.push(callbackUrl || fallbackUrl);
+    const safeCallbackUrl =
+      callbackUrl && callbackUrl.startsWith("/") && !callbackUrl.startsWith("//")
+        ? callbackUrl
+        : null;
+
+    router.push(safeCallbackUrl || fallbackUrl);
     router.refresh();
   }
 

@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/db";
 import Booking from "@/models/Booking";
 import CancellationRequest from "@/models/CancellationRequest";
 import { requireAuth } from "@/lib/rbac";
+import { isValidObjectId } from "@/lib/mongo";
 import { successResponse, errorResponse, unauthorizedResponse, forbiddenResponse, notFoundResponse } from "@/lib/api-response";
 
 export async function POST(
@@ -15,6 +16,7 @@ export async function POST(
     if (user.role !== "CUSTOMER") return forbiddenResponse();
 
     const { id } = await params;
+    if (!isValidObjectId(id)) return notFoundResponse("Booking");
     const { reason } = await req.json() as { reason?: string };
     const trimmedReason = reason?.trim();
 

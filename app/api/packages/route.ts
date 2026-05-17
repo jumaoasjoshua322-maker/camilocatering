@@ -4,6 +4,9 @@ import Package from "@/models/Package";
 import { requireRole } from "@/lib/rbac";
 import { packageSchema } from "@/lib/validations";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import type { PackageCategory } from "@/types";
+
+const CATEGORIES: PackageCategory[] = ["WEDDING", "CORPORATE", "BIRTHDAY", "SOCIAL", "OTHER"];
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,11 +15,20 @@ export async function GET(req: NextRequest) {
     const category = searchParams.get("category");
     const featured = searchParams.get("featured");
     const all = searchParams.get("all"); // admin: include inactive
+    const includeInactive = all === "1" || all === "true";
 
     const query: Record<string, unknown> = {};
-    if (!all) query.isActive = true;
-    if (category) query.category = category;
-    if (featured) query.isFeatured = true;
+    if (includeInactive) {
+      const user = await requireRole("ADMIN", "STAFF");
+      if (!user) return unauthorizedResponse();
+    } else {
+      query.isActive = true;
+    }
+    if (category) {
+      if (!CATEGORIES.includes(category as PackageCategory)) return errorResponse("Invalid category");
+      query.category = category;
+    }
+    if (featured === "1" || featured === "true") query.isFeatured = true;
 
     const packages = await Package.find(query).sort({ isFeatured: -1, price: 1 }).lean();
 

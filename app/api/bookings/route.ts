@@ -9,6 +9,9 @@ import { bookingSchema } from "@/lib/validations";
 import { sendBookingConfirmation } from "@/services/email";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import type { BookingStatus } from "@/types";
+
+const BOOKING_STATUSES: BookingStatus[] = ["PENDING", "CONFIRMED", "PAID", "COMPLETED", "CANCELLED"];
 
 export async function GET(req: NextRequest) {
   try {
@@ -24,7 +27,10 @@ export async function GET(req: NextRequest) {
 
     const query: Record<string, unknown> = {};
     if (user.role === "CUSTOMER") query.customerId = user.id;
-    if (status) query.status = status;
+    if (status) {
+      if (!BOOKING_STATUSES.includes(status as BookingStatus)) return errorResponse("Invalid booking status");
+      query.status = status;
+    }
 
     const [bookings, total] = await Promise.all([
       Booking.find(query)

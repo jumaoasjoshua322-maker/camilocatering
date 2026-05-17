@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import { loginSchema } from "@/lib/validations";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import type { UserRole } from "@/types";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -15,12 +16,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   providers: [
     Credentials({
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) return null;
 
+        const ip = getClientIp(request);
+        const email = parsed.data.email.toLowerCase();
+        const limited = rateLimit(`login:${ip}:${email}`, 10, 15 * 60 * 1000);
+        if (!limited.allowed) return null;
+
         await connectDB();
-        const user = await User.findOne({ email: parsed.data.email }).select("+password");
+        const user = await User.findOne({ email }).select("+password");
         if (!user) return null;
 
         const valid = await bcrypt.compare(parsed.data.password, user.password);

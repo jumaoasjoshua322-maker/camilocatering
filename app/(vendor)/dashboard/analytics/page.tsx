@@ -1,7 +1,7 @@
+import Link from "next/link";
 import { connectDB } from "@/lib/db";
 import Booking from "@/models/Booking";
-import Package from "@/models/Package";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, TrendingUp, Calendar, PhilippinePeso, CalendarRange } from "lucide-react";
 import { RevenueTrendChart, type DailyRevenuePoint } from "./revenue-trend-chart";
@@ -10,6 +10,16 @@ export const metadata = { title: "Analytics" };
 export const dynamic = "force-dynamic";
 
 const PAID_STATUSES = ["PAID", "COMPLETED"];
+
+const RANGES = {
+  "30d": { label: "Last 30 days", days: 30 },
+  "90d": { label: "Last 90 days", days: 90 },
+  ytd: { label: "Year to date", days: null },
+  all: { label: "All time", days: null },
+} as const;
+
+type RangeKey = keyof typeof RANGES;
+const RANGE_KEYS = Object.keys(RANGES) as RangeKey[];
 
 function startOfDay(d: Date) {
   const x = new Date(d);
@@ -21,7 +31,21 @@ function isoDate(d: Date) {
   return d.toISOString().slice(0, 10);
 }
 
-export default async function AnalyticsPage() {
+function rangeStart(key: RangeKey, now: Date): Date | null {
+  if (key === "all") return null;
+  if (key === "ytd") return new Date(now.getFullYear(), 0, 1);
+  const days = RANGES[key].days;
+  return days ? startOfDay(new Date(now.getTime() - (days - 1) * 24 * 60 * 60 * 1000)) : null;
+}
+
+interface Props {
+  searchParams: Promise<{ range?: string }>;
+}
+
+export default async function AnalyticsPage({ searchParams }: Props) {
+  const sp = await searchParams;
+  const range: RangeKey = (RANGE_KEYS.includes(sp.range as RangeKey) ? sp.range : "90d") as RangeKey;
+
   await connectDB();
 
   const now = new Date();
@@ -29,9 +53,21 @@ export default async function AnalyticsPage() {
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
 
-  // 30-day window aligned to event dates so revenue accrues when the event happens.
+  // Trend always shows Last 30 days regardless of card range.
   const trendStart = startOfDay(new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000));
-  const trendEnd = new Date(now.getTime() + 24 * 60 * 60 * 1000); // include today
+  const trendEnd = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+  const topStart = rangeStart(range, now);
+
+  // For bookings without a paidAt (legacy/seed data), fall back to updatedAt.
+  // ifNull picks the first non-null value.
+  const paidAtExpr = { $ifNull: ["$paidAt", "$updatedAt"] };
+
+  const topMatch: Record<string, unknown> = { status: { $in: PAID_STATUSES } };
+  if (topStart) {
+    // Restrict by paidAt-or-fallback. We do this in a $expr so $ifNull works inside $match.
+    topMatch.$expr = { $gte: [paidAtExpr, topStart] };
+  }
 
   const [
     totalRevenue,
@@ -61,38 +97,37 @@ export default async function AnalyticsPage() {
     ]),
     Booking.countDocuments(),
     Booking.countDocuments({ createdAt: { $gte: startOfMonth } }),
-    Package.aggregate([
+    Booking.aggregate([
+      { $match: topMatch },
       {
-        $lookup: {
-          from: "bookings",
-          localField: "_id",
-          foreignField: "packageId",
-          as: "bookings",
-        },
-      },
-      {
-        $project: {
-          name: 1,
-          category: 1,
-          price: 1,
-          bookingCount: { $size: "$bookings" },
-          revenue: {
-            $sum: {
-              $map: {
-                input: {
-                  $filter: {
-                    input: "$bookings",
-                    cond: { $in: ["$$this.status", PAID_STATUSES] },
-                  },
-                },
-                in: "$$this.totalAmount",
-              },
-            },
-          },
+        $group: {
+          _id: "$packageId",
+          revenue: { $sum: "$totalAmount" },
+          bookingCount: { $sum: 1 },
+          lastPaidAt: { $max: paidAtExpr },
         },
       },
       { $sort: { revenue: -1, bookingCount: -1 } },
       { $limit: 5 },
+      {
+        $lookup: {
+          from: "packages",
+          localField: "_id",
+          foreignField: "_id",
+          as: "package",
+        },
+      },
+      { $unwind: { path: "$package", preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          _id: 1,
+          revenue: 1,
+          bookingCount: 1,
+          lastPaidAt: 1,
+          name: { $ifNull: ["$package.name", "(deleted package)"] },
+          category: { $ifNull: ["$package.category", "OTHER"] },
+        },
+      },
     ]),
     Booking.aggregate([
       {
@@ -116,7 +151,7 @@ export default async function AnalyticsPage() {
   const lastMonth = lastMonthRevenue[0]?.total || 0;
   const growth = lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth) * 100 : 0;
 
-  // Build a contiguous 30-day series so empty days render at zero instead of disappearing.
+  // Build a contiguous 30-day series.
   const trendByDate = new Map<string, { revenue: number; count: number }>(
     (trendBuckets as { _id: string; revenue: number; count: number }[]).map((b) => [
       b._id,
@@ -213,22 +248,60 @@ export default async function AnalyticsPage() {
       {/* Top Packages */}
       <Card>
         <CardHeader>
-          <CardTitle>Top Performing Packages</CardTitle>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle>Top Performing Packages</CardTitle>
+              <p className="text-xs text-neutral-400 mt-1">By revenue · paid &amp; completed only</p>
+            </div>
+            <div className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 p-1 dark:border-neutral-800 dark:bg-neutral-900">
+              {RANGE_KEYS.map((key) => {
+                const active = key === range;
+                return (
+                  <Link
+                    key={key}
+                    href={`/dashboard/analytics?range=${key}`}
+                    scroll={false}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                      active
+                        ? "bg-white text-amber-700 shadow-sm dark:bg-neutral-800 dark:text-amber-400"
+                        : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
+                    }`}
+                  >
+                    {RANGES[key].label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {packageStats.length === 0 ? (
-            <div className="px-6 py-10 text-center text-sm text-neutral-500">No data yet</div>
+            <div className="px-6 py-10 text-center text-sm text-neutral-500">
+              No paid bookings in this range
+            </div>
           ) : (
             <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
-              {packageStats.map((pkg: { _id: string; name: string; category: string; bookingCount: number; revenue: number }) => (
-                <div key={pkg._id.toString()} className="flex items-center justify-between px-6 py-4">
+              {(packageStats as {
+                _id: string;
+                name: string;
+                category: string;
+                bookingCount: number;
+                revenue: number;
+                lastPaidAt: Date | null;
+              }[]).map((pkg) => (
+                <div key={pkg._id.toString()} className="flex items-start justify-between gap-4 px-6 py-4">
                   <div className="min-w-0">
                     <p className="font-medium text-neutral-900 dark:text-white truncate">{pkg.name}</p>
-                    <p className="text-xs text-neutral-400">
+                    <p className="text-xs text-neutral-400 mt-0.5">
                       {pkg.category} · {pkg.bookingCount} {pkg.bookingCount === 1 ? "booking" : "bookings"}
                     </p>
+                    {pkg.lastPaidAt && (
+                      <p className="text-xs text-neutral-400 mt-0.5">
+                        Last paid {formatDate(pkg.lastPaidAt)}
+                      </p>
+                    )}
                   </div>
-                  <span className="text-lg font-bold text-amber-600 ml-4 whitespace-nowrap">
+                  <span className="text-lg font-bold text-amber-600 whitespace-nowrap">
                     {formatCurrency(pkg.revenue)}
                   </span>
                 </div>

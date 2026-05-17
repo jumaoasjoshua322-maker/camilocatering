@@ -97,9 +97,13 @@ export async function PATCH(
     }
 
     // Compare-and-swap: only update if status is still what we read.
+    const update: Record<string, unknown> = { status: nextStatus };
+    if (nextStatus === "PAID" && current.status !== "PAID") {
+      update.paidAt = new Date();
+    }
     const updated = await Booking.findOneAndUpdate(
       { _id: id, status: current.status },
-      { $set: { status: nextStatus } },
+      { $set: update },
       { new: true }
     )
       .populate("packageId", "name")

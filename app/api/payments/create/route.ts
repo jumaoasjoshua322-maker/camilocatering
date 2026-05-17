@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     // CAS: only update if still CONFIRMED.
     const updated = await Booking.findOneAndUpdate(
       { _id: bookingId, status: "CONFIRMED" },
-      { $set: { status: "PAID", paymentId: payment._id } },
+      { $set: { status: "PAID", paymentId: payment._id, paidAt: new Date() } },
       { new: true }
     );
 

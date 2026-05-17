@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
       // CAS: only flip the booking if it is still CONFIRMED to avoid double-paying.
       const booking = await Booking.findOneAndUpdate(
         { _id: payment.bookingId, status: "CONFIRMED" },
-        { $set: { status: "PAID", paymentId: payment._id } },
+        { $set: { status: "PAID", paymentId: payment._id, paidAt: new Date() } },
         { new: true }
       ).populate("packageId", "name");
 

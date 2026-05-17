@@ -11,6 +11,7 @@ export interface BookingDocument extends Document {
   totalAmount: number;
   notes?: string;
   paymentId?: mongoose.Types.ObjectId;
+  paidAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,12 +31,14 @@ const BookingSchema = new Schema<BookingDocument>(
     totalAmount: { type: Number, required: true },
     notes: { type: String },
     paymentId: { type: Schema.Types.ObjectId, ref: "Payment" },
+    paidAt: { type: Date },
   },
   { timestamps: true }
 );
 
 BookingSchema.index({ status: 1, eventDate: 1 });
 BookingSchema.index({ customerId: 1, status: 1 });
+BookingSchema.index({ packageId: 1, status: 1, paidAt: -1 });
 
 const Booking: Model<BookingDocument> =
   mongoose.models.Booking ??

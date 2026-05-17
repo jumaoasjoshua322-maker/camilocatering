@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { CalendarDays, MapPin, Users, ChevronDown, CreditCard, Eye, XCircle } from "lucide-react";
+import { CalendarDays, MapPin, Users, ChevronDown, CreditCard, Eye, XCircle, X } from "lucide-react";
 import type { BookingStatus } from "@/types";
 
 interface BookingItem {
@@ -56,19 +57,61 @@ interface Props {
 }
 
 export function BookingList({ role }: Props) {
+  return (
+    <Suspense fallback={<BookingListSkeleton />}>
+      <BookingListInner role={role} />
+    </Suspense>
+  );
+}
+
+function BookingListSkeleton() {
+  return (
+    <div className="flex flex-col gap-3">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="h-32 rounded-xl bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
+      ))}
+    </div>
+  );
+}
+
+function BookingListInner({ role }: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const statusParam = searchParams.get("status") || "";
+  const packageId = searchParams.get("packageId") || "";
+
   const [bookings, setBookings] = useState<BookingItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState("");
   const [total, setTotal] = useState(0);
   const [payingId, setPayingId] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState("");
   const [cancelingId, setCancelingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState("");
 
+  const filteredPackageName =
+    packageId && bookings.length > 0
+      ? bookings.find((b) => b.packageId)?.packageId?.name ?? null
+      : null;
+
+  function setStatus(next: string) {
+    const sp = new URLSearchParams(searchParams.toString());
+    if (next) sp.set("status", next);
+    else sp.delete("status");
+    router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
+  }
+
+  function clearPackageFilter() {
+    const sp = new URLSearchParams(searchParams.toString());
+    sp.delete("packageId");
+    router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
+  }
+
   const fetchBookings = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     const params = new URLSearchParams();
-    if (statusFilter) params.set("status", statusFilter);
+    if (statusParam) params.set("status", statusParam);
+    if (packageId) params.set("packageId", packageId);
     try {
       const res = await fetch(`/api/bookings?${params}`, { cache: "no-store" });
       const json = await res.json();
@@ -79,7 +122,7 @@ export function BookingList({ role }: Props) {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [statusFilter]);
+  }, [statusParam, packageId]);
 
   useEffect(() => { fetchBookings(); }, [fetchBookings]);
 
@@ -175,12 +218,28 @@ export function BookingList({ role }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Active package filter pill */}
+      {packageId && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+          <span>
+            Showing bookings for{" "}
+            <span className="font-semibold">{filteredPackageName ?? "this package"}</span>
+          </span>
+          <button
+            onClick={clearPackageFilter}
+            className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs hover:bg-amber-100 dark:hover:bg-amber-900/40"
+          >
+            <X className="h-3.5 w-3.5" /> Clear
+          </button>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="flex items-center gap-2 flex-wrap">
         <button
-          onClick={() => setStatusFilter("")}
+          onClick={() => setStatus("")}
           className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-            statusFilter === ""
+            statusParam === ""
               ? "bg-amber-600 text-white"
               : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400"
           }`}
@@ -190,9 +249,9 @@ export function BookingList({ role }: Props) {
         {STATUS_OPTIONS.map((s) => (
           <button
             key={s}
-            onClick={() => setStatusFilter(s)}
+            onClick={() => setStatus(s)}
             className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              statusFilter === s
+              statusParam === s
                 ? "bg-amber-600 text-white"
                 : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400"
             }`}

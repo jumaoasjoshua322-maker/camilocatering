@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
     await connectDB();
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
+    const packageId = searchParams.get("packageId");
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const limit = 20;
     const skip = (page - 1) * limit;
@@ -31,6 +32,10 @@ export async function GET(req: NextRequest) {
     if (status) {
       if (!BOOKING_STATUSES.includes(status as BookingStatus)) return errorResponse("Invalid booking status");
       query.status = status;
+    }
+    if (packageId) {
+      if (!/^[a-f\d]{24}$/i.test(packageId)) return errorResponse("Invalid package id");
+      query.packageId = packageId;
     }
 
     const [bookings, total] = await Promise.all([

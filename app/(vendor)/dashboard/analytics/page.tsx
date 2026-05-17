@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/db";
 import Booking from "@/models/Booking";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, TrendingUp, Calendar, PhilippinePeso, CalendarRange } from "lucide-react";
+import { BarChart3, TrendingUp, Calendar, PhilippinePeso, CalendarRange, ChevronRight } from "lucide-react";
 import { RevenueTrendChart, type DailyRevenuePoint } from "./revenue-trend-chart";
 
 export const metadata = { title: "Analytics" };
@@ -289,9 +289,15 @@ export default async function AnalyticsPage({ searchParams }: Props) {
                 revenue: number;
                 lastPaidAt: Date | null;
               }[]).map((pkg) => (
-                <div key={pkg._id.toString()} className="flex items-start justify-between gap-4 px-6 py-4">
+                <Link
+                  key={pkg._id.toString()}
+                  href={`/dashboard/bookings?packageId=${pkg._id.toString()}&status=PAID`}
+                  className="group flex items-start justify-between gap-4 px-6 py-4 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                >
                   <div className="min-w-0">
-                    <p className="font-medium text-neutral-900 dark:text-white truncate">{pkg.name}</p>
+                    <p className="font-medium text-neutral-900 dark:text-white truncate group-hover:text-amber-600 transition-colors">
+                      {pkg.name}
+                    </p>
                     <p className="text-xs text-neutral-400 mt-0.5">
                       {pkg.category} · {pkg.bookingCount} {pkg.bookingCount === 1 ? "booking" : "bookings"}
                     </p>
@@ -301,10 +307,13 @@ export default async function AnalyticsPage({ searchParams }: Props) {
                       </p>
                     )}
                   </div>
-                  <span className="text-lg font-bold text-amber-600 whitespace-nowrap">
-                    {formatCurrency(pkg.revenue)}
-                  </span>
-                </div>
+                  <div className="flex items-center gap-2 whitespace-nowrap">
+                    <span className="text-lg font-bold text-amber-600">
+                      {formatCurrency(pkg.revenue)}
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-neutral-300 group-hover:text-amber-600 transition-colors" />
+                  </div>
+                </Link>
               ))}
             </div>
           )}

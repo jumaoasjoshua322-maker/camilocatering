@@ -125,7 +125,7 @@ export default function HomePage() {
               <Link
                 key={title}
                 href={href}
-                className="group rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                className="group rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
               >
                 <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl ${color} mb-4`}>
                   <Icon className="h-6 w-6" />

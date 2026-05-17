@@ -6,6 +6,7 @@ import User from "@/models/User";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { CalendarDays, Package as PackageIcon, PhilippinePeso, Users } from "lucide-react";
 import type { BookingStatus } from "@/types";
 
@@ -93,7 +94,13 @@ export default async function DashboardPage() {
         </CardHeader>
         <CardContent className="p-0">
           {recentBookings.length === 0 ? (
-            <div className="px-6 py-10 text-center text-sm text-neutral-500">No bookings yet</div>
+            <div className="px-6 pb-6">
+              <EmptyState
+                icon={CalendarDays}
+                title="No bookings yet"
+                description="Recent bookings will appear here as customers book your packages."
+              />
+            </div>
           ) : (
             <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {recentBookings.map((b) => {

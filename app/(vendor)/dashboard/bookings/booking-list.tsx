@@ -7,6 +7,9 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { CalendarDays, MapPin, Users, ChevronDown, CreditCard, Eye, XCircle, X } from "lucide-react";
+import { FilterPillButton } from "@/components/ui/filter-pill";
+import { EmptyState } from "@/components/ui/empty-state";
+import { LiveIndicator } from "@/components/ui/live-indicator";
 import type { BookingStatus } from "@/types";
 
 interface BookingItem {
@@ -84,6 +87,7 @@ function BookingListInner({ role }: Props) {
   const [bookings, setBookings] = useState<BookingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
+  const [lastRefresh, setLastRefresh] = useState<number | null>(null);
   const [payingId, setPayingId] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState("");
   const [cancelingId, setCancelingId] = useState<string | null>(null);
@@ -118,6 +122,7 @@ function BookingListInner({ role }: Props) {
       if (json.success) {
         setBookings(json.data.bookings);
         setTotal(json.data.total);
+        setLastRefresh(Date.now());
       }
     } finally {
       if (!silent) setLoading(false);
@@ -235,30 +240,18 @@ function BookingListInner({ role }: Props) {
       )}
 
       {/* Filters */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <button
-          onClick={() => setStatus("")}
-          className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-            statusParam === ""
-              ? "bg-amber-600 text-white"
-              : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400"
-          }`}
-        >
-          All ({total})
-        </button>
-        {STATUS_OPTIONS.map((s) => (
-          <button
-            key={s}
-            onClick={() => setStatus(s)}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              statusParam === s
-                ? "bg-amber-600 text-white"
-                : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400"
-            }`}
-          >
-            {s}
-          </button>
-        ))}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-1 flex-wrap">
+          <FilterPillButton active={statusParam === ""} onClick={() => setStatus("")}>
+            All ({total})
+          </FilterPillButton>
+          {STATUS_OPTIONS.map((s) => (
+            <FilterPillButton key={s} active={statusParam === s} onClick={() => setStatus(s)}>
+              {s}
+            </FilterPillButton>
+          ))}
+        </div>
+        {!loading && lastRefresh && <LiveIndicator since={lastRefresh} />}
       </div>
 
       {/* List */}
@@ -281,10 +274,15 @@ function BookingListInner({ role }: Props) {
           ))}
         </div>
       ) : bookings.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 rounded-xl border-2 border-dashed border-neutral-200 dark:border-neutral-700">
-          <CalendarDays className="h-12 w-12 text-neutral-300 mb-4" />
-          <p className="text-neutral-500">No bookings found</p>
-        </div>
+        <EmptyState
+          icon={CalendarDays}
+          title="No bookings found"
+          description={
+            statusParam || packageId
+              ? "Try clearing the filters above to see more bookings."
+              : "Bookings will show up here once customers book a package."
+          }
+        />
       ) : (
         <div className="flex flex-col gap-3">
           {bookings.map((booking) => (

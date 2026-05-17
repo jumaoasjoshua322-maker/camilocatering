@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, Package } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { PackageFormModal } from "./package-form-modal";
 import { formatCurrency } from "@/lib/utils";
 import type { PackageCategory } from "@/types";
@@ -119,13 +120,16 @@ export function PackageManager() {
           ))}
         </div>
       ) : packages.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 rounded-xl border-2 border-dashed border-neutral-200 dark:border-neutral-700">
-          <Package className="h-12 w-12 text-neutral-300 mb-4" />
-          <p className="text-neutral-500 mb-4">No packages yet</p>
-          <Button onClick={openCreate}>
-            <Plus className="h-4 w-4 mr-2" /> Create your first package
-          </Button>
-        </div>
+        <EmptyState
+          icon={Package}
+          title="No packages yet"
+          description="Create your first catering package so customers can start booking."
+          action={
+            <Button onClick={openCreate}>
+              <Plus className="h-4 w-4 mr-2" /> Create your first package
+            </Button>
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {packages.map((pkg) => (

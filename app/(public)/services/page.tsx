@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, ChefHat } from "lucide-react";
 import Link from "next/link";
+import { FilterPillLink } from "@/components/ui/filter-pill";
+import { EmptyState } from "@/components/ui/empty-state";
 import type { PackageCategory } from "@/types";
 
 interface Props {
@@ -44,37 +46,27 @@ export default async function ServicesPage({ searchParams }: Props) {
 
       {/* Category Filter */}
       <div className="flex flex-wrap justify-center gap-2 mb-10">
-        <Link
-          href="/services"
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-            !selectedCategory
-              ? "bg-amber-600 text-white"
-              : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400"
-          }`}
-        >
+        <FilterPillLink href="/services" active={!selectedCategory}>
           All Packages
-        </Link>
+        </FilterPillLink>
         {categories.map((cat) => (
-          <Link
+          <FilterPillLink
             key={cat}
             href={`/services?category=${cat}`}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              selectedCategory === cat
-                ? "bg-amber-600 text-white"
-                : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400"
-            }`}
+            active={selectedCategory === cat}
           >
             {cat}
-          </Link>
+          </FilterPillLink>
         ))}
       </div>
 
       {/* Package Grid */}
       {packages.length === 0 ? (
-        <div className="text-center py-24">
-          <ChefHat className="h-12 w-12 text-neutral-300 mx-auto mb-4" />
-          <p className="text-neutral-500">No packages available in this category</p>
-        </div>
+        <EmptyState
+          icon={ChefHat}
+          title="No packages available in this category"
+          description="Try a different category or browse all packages."
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {packages.map((pkg) => (

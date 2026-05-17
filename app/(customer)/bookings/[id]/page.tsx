@@ -13,6 +13,7 @@ import { PaymentButton } from "./payment-button";
 import { CancelBookingButton } from "./cancel-booking-button";
 import { CancellationRequestButton } from "./cancellation-request-button";
 import { BookingAutoRefresh } from "./booking-auto-refresh";
+import { StatusHelp } from "@/components/ui/status-help";
 import type { BookingStatus } from "@/types";
 
 const statusVariant: Record<BookingStatus, "default" | "success" | "warning" | "danger" | "neutral"> = {
@@ -90,9 +91,12 @@ export default async function BookingDetailPage({ params }: Props) {
               Booked on {formatDate(booking.createdAt)}
             </p>
           </div>
-          <Badge variant={statusVariant[booking.status as BookingStatus]} className="text-sm px-3 py-1">
-            {booking.status}
-          </Badge>
+          <div className="flex flex-col items-end gap-1.5">
+            <Badge variant={statusVariant[booking.status as BookingStatus]} className="text-sm px-3 py-1">
+              {booking.status}
+            </Badge>
+            <StatusHelp status={booking.status as BookingStatus} audience="customer" className="text-right" />
+          </div>
         </div>
       </div>
 

@@ -1,18 +1,27 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { LiveIndicator } from "@/components/ui/live-indicator";
 
 const POLL_MS = 15_000;
 
+/**
+ * Polls the route while the tab is visible and renders a small
+ * "Updated Xs ago" indicator so users know the page is live.
+ */
 export function BookingAutoRefresh() {
   const router = useRouter();
+  const [lastRefresh, setLastRefresh] = useState<number>(() => Date.now());
 
   useEffect(() => {
     let timer: number | undefined;
 
     const refresh = () => {
-      if (document.visibilityState === "visible") router.refresh();
+      if (document.visibilityState === "visible") {
+        router.refresh();
+        setLastRefresh(Date.now());
+      }
     };
 
     const start = () => {
@@ -45,5 +54,9 @@ export function BookingAutoRefresh() {
     };
   }, [router]);
 
-  return null;
+  return (
+    <div className="flex justify-end">
+      <LiveIndicator since={lastRefresh} />
+    </div>
+  );
 }

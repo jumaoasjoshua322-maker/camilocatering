@@ -3,7 +3,9 @@ import { connectDB } from "@/lib/db";
 import Booking from "@/models/Booking";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, TrendingUp, Calendar, PhilippinePeso, CalendarRange, ChevronRight } from "lucide-react";
+import { BarChart3, TrendingUp, Calendar, PhilippinePeso, CalendarRange, ChevronRight, PackageSearch } from "lucide-react";
+import { FilterPillLink } from "@/components/ui/filter-pill";
+import { EmptyState } from "@/components/ui/empty-state";
 import { RevenueTrendChart, type DailyRevenuePoint } from "./revenue-trend-chart";
 
 export const metadata = { title: "Analytics" };
@@ -254,30 +256,28 @@ export default async function AnalyticsPage({ searchParams }: Props) {
               <p className="text-xs text-neutral-400 mt-1">By revenue · paid &amp; completed only</p>
             </div>
             <div className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 p-1 dark:border-neutral-800 dark:bg-neutral-900">
-              {RANGE_KEYS.map((key) => {
-                const active = key === range;
-                return (
-                  <Link
-                    key={key}
-                    href={`/dashboard/analytics?range=${key}`}
-                    scroll={false}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                      active
-                        ? "bg-white text-amber-700 shadow-sm dark:bg-neutral-800 dark:text-amber-400"
-                        : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
-                    }`}
-                  >
-                    {RANGES[key].label}
-                  </Link>
-                );
-              })}
+              {RANGE_KEYS.map((key) => (
+                <FilterPillLink
+                  key={key}
+                  href={`/dashboard/analytics?range=${key}`}
+                  scroll={false}
+                  active={key === range}
+                  className="px-3 py-1 text-xs"
+                >
+                  {RANGES[key].label}
+                </FilterPillLink>
+              ))}
             </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           {packageStats.length === 0 ? (
-            <div className="px-6 py-10 text-center text-sm text-neutral-500">
-              No paid bookings in this range
+            <div className="px-6 pb-6">
+              <EmptyState
+                icon={PackageSearch}
+                title="No paid bookings in this range"
+                description="Switch to a longer range or check back after your next paid booking."
+              />
             </div>
           ) : (
             <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
@@ -292,7 +292,7 @@ export default async function AnalyticsPage({ searchParams }: Props) {
                 <Link
                   key={pkg._id.toString()}
                   href={`/dashboard/bookings?packageId=${pkg._id.toString()}&status=PAID`}
-                  className="group flex items-start justify-between gap-4 px-6 py-4 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                  className="group flex items-start justify-between gap-4 px-6 py-4 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-inset"
                 >
                   <div className="min-w-0">
                     <p className="font-medium text-neutral-900 dark:text-white truncate group-hover:text-amber-600 transition-colors">

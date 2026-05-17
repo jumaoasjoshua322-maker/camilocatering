@@ -48,6 +48,20 @@ export default async function SettingsPage() {
       businessHours: settings.contact?.businessHours || "",
       mapEmbedUrl: settings.contact?.mapEmbedUrl || "",
     },
+    home: {
+      whyChooseUs: {
+        title: settings.home?.whyChooseUs?.title || "",
+        items: (settings.home?.whyChooseUs?.items || []).map((v) => ({
+          title: v.title || "",
+          description: v.description || "",
+        })),
+        // Always 4 slots so the form layout is stable.
+        images: Array.from(
+          { length: 4 },
+          (_, i) => settings.home?.whyChooseUs?.images?.[i] || ""
+        ),
+      },
+    },
   };
 
   return (
@@ -55,7 +69,7 @@ export default async function SettingsPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Settings</h1>
         <p className="text-sm text-neutral-500 mt-1">
-          Manage company info and the public About / Contact pages
+          Manage company info and the public homepage / About / Contact pages
         </p>
       </div>
       <CompanySettingsForm settings={initial} />

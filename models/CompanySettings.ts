@@ -23,6 +23,19 @@ export interface ContactContent {
   mapEmbedUrl?: string;
 }
 
+export interface WhyChooseUsItem {
+  title: string;
+  description: string;
+}
+
+export interface HomeContent {
+  whyChooseUs?: {
+    title?: string;
+    items?: WhyChooseUsItem[];
+    images?: string[];
+  };
+}
+
 export interface CompanySettingsDocument extends Document {
   name: string;
   tagline: string;
@@ -38,6 +51,7 @@ export interface CompanySettingsDocument extends Document {
   };
   about?: AboutContent;
   contact?: ContactContent;
+  home?: HomeContent;
   updatedAt: Date;
 }
 
@@ -73,6 +87,30 @@ const ContactSchema = new Schema<ContactContent>(
   { _id: false }
 );
 
+const WhyChooseUsItemSchema = new Schema<WhyChooseUsItem>(
+  {
+    title: { type: String, default: "" },
+    description: { type: String, default: "" },
+  },
+  { _id: false }
+);
+
+const WhyChooseUsSchema = new Schema(
+  {
+    title: { type: String },
+    items: { type: [WhyChooseUsItemSchema], default: undefined },
+    images: { type: [String], default: undefined },
+  },
+  { _id: false }
+);
+
+const HomeSchema = new Schema<HomeContent>(
+  {
+    whyChooseUs: { type: WhyChooseUsSchema, default: () => ({}) },
+  },
+  { _id: false }
+);
+
 const CompanySettingsSchema = new Schema<CompanySettingsDocument>(
   {
     name: { type: String, default: "Camilo's Catering" },
@@ -89,6 +127,7 @@ const CompanySettingsSchema = new Schema<CompanySettingsDocument>(
     },
     about: { type: AboutSchema, default: () => ({}) },
     contact: { type: ContactSchema, default: () => ({}) },
+    home: { type: HomeSchema, default: () => ({}) },
   },
   { timestamps: true }
 );

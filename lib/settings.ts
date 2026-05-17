@@ -3,6 +3,7 @@ import CompanySettings from "@/models/CompanySettings";
 import type {
   AboutContent,
   ContactContent,
+  HomeContent,
   CompanySettingsDocument,
 } from "@/models/CompanySettings";
 
@@ -21,6 +22,13 @@ export interface PublicSettings {
     values: { title: string; description: string }[];
   };
   contact: Required<ContactContent>;
+  home: {
+    whyChooseUs: {
+      title: string;
+      items: { title: string; description: string }[];
+      images: string[];
+    };
+  };
 }
 
 const DEFAULT_ABOUT: PublicSettings["about"] = {
@@ -52,6 +60,17 @@ const DEFAULT_CONTACT: PublicSettings["contact"] = {
   mapEmbedUrl: "",
 };
 
+const DEFAULT_WHY_CHOOSE_US: PublicSettings["home"]["whyChooseUs"] = {
+  title: "Why Choose Camilo's Catering?",
+  items: [
+    { title: "15+ Years of Excellence", description: "Trusted by thousands of families and businesses across Metro Manila." },
+    { title: "Farm-to-Table Ingredients", description: "We source only the freshest local ingredients for every dish we prepare." },
+    { title: "Dedicated Event Coordinators", description: "Your personal coordinator handles every detail so you can enjoy your event." },
+    { title: "Flexible Packages", description: "Customizable menus and setups to fit your vision and budget." },
+  ],
+  images: ["", "", "", ""],
+};
+
 const DEFAULTS: PublicSettings = {
   name: "Camilo's Catering",
   tagline: "Premium Catering for Every Occasion",
@@ -64,12 +83,34 @@ const DEFAULTS: PublicSettings = {
   socialLinks: {},
   about: DEFAULT_ABOUT,
   contact: DEFAULT_CONTACT,
+  home: { whyChooseUs: DEFAULT_WHY_CHOOSE_US },
 };
 
 function pick<T>(value: T | undefined | null | "", fallback: T): T {
   if (value === undefined || value === null) return fallback;
   if (typeof value === "string" && value.trim() === "") return fallback;
   return value as T;
+}
+
+function hydrateWhyChooseUs(home?: HomeContent): PublicSettings["home"]["whyChooseUs"] {
+  const w = home?.whyChooseUs ?? {};
+
+  const items =
+    Array.isArray(w.items) && w.items.length > 0
+      ? w.items
+          .map((v) => ({ title: v?.title ?? "", description: v?.description ?? "" }))
+          .filter((v) => v.title.trim() !== "" || v.description.trim() !== "")
+      : DEFAULT_WHY_CHOOSE_US.items;
+
+  // Always emit exactly 4 image slots so the grid layout stays stable.
+  const incoming = Array.isArray(w.images) ? w.images : [];
+  const images = Array.from({ length: 4 }, (_, i) => (incoming[i] ?? "").trim());
+
+  return {
+    title: pick(w.title, DEFAULT_WHY_CHOOSE_US.title),
+    items: items.length > 0 ? items : DEFAULT_WHY_CHOOSE_US.items,
+    images,
+  };
 }
 
 export async function getPublicSettings(): Promise<PublicSettings> {
@@ -122,6 +163,9 @@ export async function getPublicSettings(): Promise<PublicSettings> {
       subheadline: pick(contact.subheadline, DEFAULT_CONTACT.subheadline),
       businessHours: pick(contact.businessHours, DEFAULT_CONTACT.businessHours),
       mapEmbedUrl: pick(contact.mapEmbedUrl, DEFAULT_CONTACT.mapEmbedUrl),
+    },
+    home: {
+      whyChooseUs: hydrateWhyChooseUs(doc.home),
     },
   };
 }

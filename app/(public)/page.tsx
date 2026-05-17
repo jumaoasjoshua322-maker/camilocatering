@@ -1,5 +1,16 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ChefHat, Star, Users, Calendar, Heart, Building2, Cake } from "lucide-react";
+import { getPublicSettings } from "@/lib/settings";
+
+export const dynamic = "force-dynamic";
+
+const PLACEHOLDER_TILE_STYLES = [
+  { wrap: "bg-amber-100 dark:bg-amber-900/20", offset: "", icon: ChefHat, iconClass: "text-amber-600 opacity-40" },
+  { wrap: "bg-neutral-200 dark:bg-neutral-800", offset: "mt-8", icon: Users, iconClass: "text-neutral-400 opacity-40" },
+  { wrap: "bg-neutral-200 dark:bg-neutral-800", offset: "", icon: Calendar, iconClass: "text-neutral-400 opacity-40" },
+  { wrap: "bg-amber-600", offset: "-mt-8", icon: Star, iconClass: "text-white opacity-40" },
+];
 
 const services = [
   {
@@ -57,7 +68,9 @@ const testimonials = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const settings = await getPublicSettings();
+  const why = settings.home.whyChooseUs;
   return (
     <>
       {/* Hero */}
@@ -146,22 +159,17 @@ export default function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
               <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-white mb-6">
-                Why Choose Camilo&apos;s Catering?
+                {why.title}
               </h2>
               <div className="flex flex-col gap-5">
-                {[
-                  { title: "15+ Years of Excellence", desc: "Trusted by thousands of families and businesses across Metro Manila." },
-                  { title: "Farm-to-Table Ingredients", desc: "We source only the freshest local ingredients for every dish we prepare." },
-                  { title: "Dedicated Event Coordinators", desc: "Your personal coordinator handles every detail so you can enjoy your event." },
-                  { title: "Flexible Packages", desc: "Customizable menus and setups to fit your vision and budget." },
-                ].map(({ title, desc }) => (
+                {why.items.map(({ title, description }) => (
                   <div key={title} className="flex gap-4">
                     <div className="h-6 w-6 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0 mt-0.5">
                       <div className="h-2 w-2 rounded-full bg-amber-600" />
                     </div>
                     <div>
                       <p className="font-semibold text-neutral-900 dark:text-white">{title}</p>
-                      <p className="text-sm text-neutral-500 mt-0.5">{desc}</p>
+                      <p className="text-sm text-neutral-500 mt-0.5">{description}</p>
                     </div>
                   </div>
                 ))}
@@ -174,18 +182,28 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-2xl bg-amber-100 dark:bg-amber-900/20 h-48 flex items-center justify-center">
-                <ChefHat className="h-16 w-16 text-amber-600 opacity-40" />
-              </div>
-              <div className="rounded-2xl bg-neutral-200 dark:bg-neutral-800 h-48 mt-8 flex items-center justify-center">
-                <Users className="h-16 w-16 text-neutral-400 opacity-40" />
-              </div>
-              <div className="rounded-2xl bg-neutral-200 dark:bg-neutral-800 h-48 flex items-center justify-center">
-                <Calendar className="h-16 w-16 text-neutral-400 opacity-40" />
-              </div>
-              <div className="rounded-2xl bg-amber-600 h-48 -mt-8 flex items-center justify-center">
-                <Star className="h-16 w-16 text-white opacity-40" />
-              </div>
+              {PLACEHOLDER_TILE_STYLES.map((tile, i) => {
+                const src = why.images[i];
+                const Icon = tile.icon;
+                return (
+                  <div
+                    key={i}
+                    className={`relative rounded-2xl h-48 overflow-hidden ${tile.offset} ${src ? "bg-neutral-100 dark:bg-neutral-800" : tile.wrap} ${src ? "" : "flex items-center justify-center"}`}
+                  >
+                    {src ? (
+                      <Image
+                        src={src}
+                        alt=""
+                        fill
+                        sizes="(max-width: 1024px) 50vw, 25vw"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <Icon className={`h-16 w-16 ${tile.iconClass}`} />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

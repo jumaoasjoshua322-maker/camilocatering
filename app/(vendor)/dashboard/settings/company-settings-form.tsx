@@ -44,6 +44,13 @@ export interface SettingsFormState {
     businessHours: string;
     mapEmbedUrl: string;
   };
+  home: {
+    whyChooseUs: {
+      title: string;
+      items: ValueItem[];
+      images: string[]; // length always 4
+    };
+  };
 }
 
 interface Props {
@@ -90,6 +97,61 @@ export function CompanySettingsForm({ settings }: Props) {
     value: SettingsFormState["contact"][K]
   ) {
     setState((s) => ({ ...s, contact: { ...s.contact, [field]: value } }));
+  }
+
+  function setWhyTitle(value: string) {
+    setState((s) => ({
+      ...s,
+      home: { ...s.home, whyChooseUs: { ...s.home.whyChooseUs, title: value } },
+    }));
+  }
+
+  function setWhyItem(i: number, patch: Partial<ValueItem>) {
+    setState((s) => {
+      const next = [...s.home.whyChooseUs.items];
+      next[i] = { ...next[i], ...patch };
+      return {
+        ...s,
+        home: { ...s.home, whyChooseUs: { ...s.home.whyChooseUs, items: next } },
+      };
+    });
+  }
+
+  function addWhyItem() {
+    setState((s) => ({
+      ...s,
+      home: {
+        ...s.home,
+        whyChooseUs: {
+          ...s.home.whyChooseUs,
+          items: [...s.home.whyChooseUs.items, { title: "", description: "" }],
+        },
+      },
+    }));
+  }
+
+  function removeWhyItem(i: number) {
+    setState((s) => ({
+      ...s,
+      home: {
+        ...s.home,
+        whyChooseUs: {
+          ...s.home.whyChooseUs,
+          items: s.home.whyChooseUs.items.filter((_, idx) => idx !== i),
+        },
+      },
+    }));
+  }
+
+  function setWhyImage(i: number, url: string) {
+    setState((s) => {
+      const next = [...s.home.whyChooseUs.images];
+      next[i] = url;
+      return {
+        ...s,
+        home: { ...s.home, whyChooseUs: { ...s.home.whyChooseUs, images: next } },
+      };
+    });
   }
 
   function setParagraph(i: number, value: string) {
@@ -173,6 +235,15 @@ export function CompanySettingsForm({ settings }: Props) {
         businessHours: state.contact.businessHours,
         mapEmbedUrl: state.contact.mapEmbedUrl,
       },
+      home: {
+        whyChooseUs: {
+          title: state.home.whyChooseUs.title,
+          items: state.home.whyChooseUs.items.filter(
+            (v) => v.title.trim() !== "" || v.description.trim() !== ""
+          ),
+          images: state.home.whyChooseUs.images,
+        },
+      },
     };
 
     try {
@@ -216,6 +287,7 @@ export function CompanySettingsForm({ settings }: Props) {
           <TabsTrigger value="branding">Branding</TabsTrigger>
           <TabsTrigger value="about">About Page</TabsTrigger>
           <TabsTrigger value="contact">Contact Page</TabsTrigger>
+          <TabsTrigger value="home">Homepage</TabsTrigger>
         </TabsList>
 
         {/* COMPANY */}
@@ -425,6 +497,98 @@ export function CompanySettingsForm({ settings }: Props) {
               </p>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* HOMEPAGE */}
+        <TabsContent value="home">
+          <div className="flex flex-col gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Why Choose Us</CardTitle>
+                <p className="text-xs text-neutral-400 mt-1">
+                  Section on the homepage with bullet points and a 2×2 image grid.
+                </p>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-5">
+                <Field label="Section Title">
+                  <Input
+                    value={state.home.whyChooseUs.title}
+                    onChange={(e) => setWhyTitle(e.target.value)}
+                    placeholder="Why Choose Camilo's Catering?"
+                  />
+                </Field>
+
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Bullet Points</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={addWhyItem}
+                      disabled={state.home.whyChooseUs.items.length >= 8}
+                    >
+                      <Plus className="h-4 w-4" /> Add Item
+                    </Button>
+                  </div>
+                  {state.home.whyChooseUs.items.length === 0 && (
+                    <p className="text-xs text-neutral-400">No items yet.</p>
+                  )}
+                  {state.home.whyChooseUs.items.map((v, i) => (
+                    <div
+                      key={i}
+                      className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 flex flex-col gap-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-neutral-500">Item #{i + 1}</span>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => removeWhyItem(i)}
+                          aria-label="Remove item"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                      <Field label="Title">
+                        <Input
+                          value={v.title}
+                          onChange={(e) => setWhyItem(i, { title: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Description">
+                        <Textarea
+                          rows={2}
+                          value={v.description}
+                          onChange={(e) => setWhyItem(i, { description: e.target.value })}
+                        />
+                      </Field>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <Label>Image Grid (2×2)</Label>
+                  <p className="text-xs text-neutral-400">
+                    Empty slots fall back to the default icon tiles. Recommended: square or
+                    landscape photos.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {state.home.whyChooseUs.images.map((src, i) => (
+                      <ImageUploadField
+                        key={i}
+                        label={`Tile ${i + 1}`}
+                        aspect="square"
+                        value={src}
+                        onChange={(url) => setWhyImage(i, url)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
 

@@ -78,6 +78,21 @@ export const contactContentSchema = z.object({
   mapEmbedUrl: optionalUrlOrPath,
 });
 
+export const whyChooseUsItemSchema = z.object({
+  title: z.string().trim().max(120).default(""),
+  description: z.string().trim().max(500).default(""),
+});
+
+export const homeContentSchema = z.object({
+  whyChooseUs: z
+    .object({
+      title: z.string().trim().max(200).optional(),
+      items: z.array(whyChooseUsItemSchema).max(8).optional(),
+      images: z.array(optionalUrlOrPath).max(4).optional(),
+    })
+    .optional(),
+});
+
 export const companySettingsSchema = z.object({
   name: z.string().trim().min(2).max(120),
   tagline: z.string().trim().max(200).optional(),
@@ -93,6 +108,7 @@ export const companySettingsSchema = z.object({
   }).optional(),
   about: aboutContentSchema.optional(),
   contact: contactContentSchema.optional(),
+  home: homeContentSchema.optional(),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
@@ -102,6 +118,7 @@ export type BookingInput = z.infer<typeof bookingSchema>;
 export type CompanySettingsInput = z.infer<typeof companySettingsSchema>;
 export type AboutContentInput = z.infer<typeof aboutContentSchema>;
 export type ContactContentInput = z.infer<typeof contactContentSchema>;
+export type HomeContentInput = z.infer<typeof homeContentSchema>;
 
 export const contactMessageSchema = z.object({
   name: z.string().trim().min(2, "Name is too short").max(120),

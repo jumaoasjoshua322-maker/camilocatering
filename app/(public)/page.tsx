@@ -188,7 +188,7 @@ export default async function HomePage() {
                 return (
                   <div
                     key={i}
-                    className={`relative rounded-2xl h-48 overflow-hidden ${tile.offset} ${src ? "bg-neutral-100 dark:bg-neutral-800" : tile.wrap} ${src ? "" : "flex items-center justify-center"}`}
+                    className={`group relative rounded-2xl h-48 overflow-hidden ${tile.offset} ${src ? "bg-neutral-100 dark:bg-neutral-800" : tile.wrap} ${src ? "" : "flex items-center justify-center"}`}
                   >
                     {src ? (
                       <Image
@@ -196,7 +196,7 @@ export default async function HomePage() {
                         alt=""
                         fill
                         sizes="(max-width: 1024px) 50vw, 25vw"
-                        className="object-cover"
+                        className="object-cover transition-transform duration-500 ease-out group-hover:scale-110"
                       />
                     ) : (
                       <Icon className={`h-16 w-16 ${tile.iconClass}`} />

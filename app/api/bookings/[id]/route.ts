@@ -6,6 +6,7 @@ import { requireAuth } from "@/lib/rbac";
 import { sendBookingConfirmation } from "@/services/email";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { isValidObjectId } from "@/lib/mongo";
+import { isSameOrigin } from "@/lib/security";
 import {
   successResponse, errorResponse, unauthorizedResponse,
   forbiddenResponse, notFoundResponse,
@@ -19,6 +20,10 @@ const TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
   COMPLETED: [],
   CANCELLED: [],
 };
+
+const ALL_STATUSES = new Set<BookingStatus>([
+  "PENDING", "CONFIRMED", "PAID", "COMPLETED", "CANCELLED",
+]);
 
 export async function GET(
   _req: NextRequest,
@@ -55,56 +60,76 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    if (!isSameOrigin(req)) return forbiddenResponse();
     const { id } = await params;
     if (!isValidObjectId(id)) return notFoundResponse("Booking");
     const user = await requireAuth();
     if (!user) return unauthorizedResponse();
 
-    const { status } = await req.json() as { status: BookingStatus };
-    if (!status) return errorResponse("Status is required");
-    if (!(status in TRANSITIONS)) return errorResponse("Invalid booking status");
+    const body = (await req.json()) as { status?: unknown };
+    const status = body?.status;
+    if (typeof status !== "string" || !ALL_STATUSES.has(status as BookingStatus)) {
+      return errorResponse("Invalid booking status");
+    }
+    const nextStatus = status as BookingStatus;
 
     await connectDB();
-    const booking = await Booking.findById(id).populate("packageId", "name").populate("customerId", "name email");
-    if (!booking) return notFoundResponse("Booking");
+    // Read first only to check ownership and authorize the transition.
+    const current = await Booking.findById(id).select("status customerId").lean();
+    if (!current) return notFoundResponse("Booking");
 
+    const ownerId =
+      (current.customerId as { _id?: { toString(): string }; toString(): string })?._id?.toString() ??
+      current.customerId.toString();
     const isStaffUser = user.role === "ADMIN" || user.role === "STAFF";
-    const customerId = (booking.customerId as { _id?: { toString(): string }; toString(): string });
-    const ownerId = customerId._id?.toString() ?? customerId.toString();
     const isOwner = ownerId === user.id;
     const customerCanCancel =
       isOwner &&
       user.role === "CUSTOMER" &&
-      status === "CANCELLED" &&
-      ["PENDING", "CONFIRMED"].includes(booking.status);
+      nextStatus === "CANCELLED" &&
+      ["PENDING", "CONFIRMED"].includes(current.status as BookingStatus);
 
     if (!isStaffUser && !customerCanCancel) return forbiddenResponse();
 
-    const allowed = TRANSITIONS[booking.status as BookingStatus];
-    if (!allowed.includes(status)) {
-      return errorResponse(`Cannot transition from ${booking.status} to ${status}`);
+    const allowedNext = TRANSITIONS[current.status as BookingStatus];
+    if (!allowedNext.includes(nextStatus)) {
+      return errorResponse(`Cannot transition from ${current.status} to ${nextStatus}`);
     }
 
-    booking.status = status;
-    await booking.save();
+    // Compare-and-swap: only update if status is still what we read.
+    const updated = await Booking.findOneAndUpdate(
+      { _id: id, status: current.status },
+      { $set: { status: nextStatus } },
+      { new: true }
+    )
+      .populate("packageId", "name")
+      .populate("customerId", "name email");
 
-    const customer = await User.findById(booking.customerId).lean();
-    const pkg = booking.packageId as unknown as { name: string };
+    if (!updated) {
+      // Someone else moved the booking between our read and write.
+      return errorResponse(
+        "Booking was just updated by someone else. Refresh and try again.",
+        409
+      );
+    }
+
+    const customer = await User.findById(updated.customerId).lean();
+    const pkg = updated.packageId as unknown as { name: string };
 
     sendBookingConfirmation({
       customerName: (customer as { name: string })?.name || "Customer",
       customerEmail: (customer as { email: string })?.email || "",
       vendorName: "Camilo's Catering",
       packageName: pkg?.name || "Package",
-      eventDate: formatDate(booking.eventDate),
-      venue: booking.venue,
-      guestCount: booking.guestCount,
-      totalAmount: formatCurrency(booking.totalAmount),
-      bookingId: booking._id.toString(),
-      status,
+      eventDate: formatDate(updated.eventDate),
+      venue: updated.venue,
+      guestCount: updated.guestCount,
+      totalAmount: formatCurrency(updated.totalAmount),
+      bookingId: updated._id.toString(),
+      status: nextStatus,
     }).catch(console.error);
 
-    return successResponse({ ...booking.toObject(), _id: booking._id.toString() });
+    return successResponse({ ...updated.toObject(), _id: updated._id.toString() });
   } catch (err) {
     console.error("[BOOKING_PATCH]", err);
     return errorResponse("Internal server error", 500);

@@ -22,7 +22,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const ip = getClientIp(request);
         const email = parsed.data.email.toLowerCase();
-        const limited = rateLimit(`login:${ip}:${email}`, 10, 15 * 60 * 1000);
+        const limited = await rateLimit(`login:${ip}:${email}`, 10, 15 * 60 * 1000);
         if (!limited.allowed) return null;
 
         await connectDB();

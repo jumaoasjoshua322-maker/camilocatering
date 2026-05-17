@@ -3,7 +3,8 @@ import { connectDB } from "@/lib/db";
 import CompanySettings from "@/models/CompanySettings";
 import { requireRole } from "@/lib/rbac";
 import { companySettingsSchema } from "@/lib/validations";
-import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import { isSameOrigin } from "@/lib/security";
+import { successResponse, errorResponse, unauthorizedResponse, forbiddenResponse } from "@/lib/api-response";
 
 export async function GET() {
   try {
@@ -18,6 +19,7 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   try {
+    if (!isSameOrigin(req)) return forbiddenResponse();
     const user = await requireRole("ADMIN");
     if (!user) return unauthorizedResponse();
 

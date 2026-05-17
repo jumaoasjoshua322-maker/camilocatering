@@ -4,6 +4,7 @@ import Booking from "@/models/Booking";
 import CancellationRequest from "@/models/CancellationRequest";
 import { requireAuth } from "@/lib/rbac";
 import { isValidObjectId } from "@/lib/mongo";
+import { isSameOrigin } from "@/lib/security";
 import { successResponse, errorResponse, unauthorizedResponse, forbiddenResponse, notFoundResponse } from "@/lib/api-response";
 
 export async function POST(
@@ -11,6 +12,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    if (!isSameOrigin(req)) return forbiddenResponse();
     const user = await requireAuth();
     if (!user) return unauthorizedResponse();
     if (user.role !== "CUSTOMER") return forbiddenResponse();

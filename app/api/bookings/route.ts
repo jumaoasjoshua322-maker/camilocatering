@@ -8,7 +8,8 @@ import { requireAuth } from "@/lib/rbac";
 import { bookingSchema } from "@/lib/validations";
 import { sendBookingConfirmation } from "@/services/email";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import { successResponse, errorResponse, unauthorizedResponse, forbiddenResponse } from "@/lib/api-response";
+import { isSameOrigin } from "@/lib/security";
 import type { BookingStatus } from "@/types";
 
 const BOOKING_STATUSES: BookingStatus[] = ["PENDING", "CONFIRMED", "PAID", "COMPLETED", "CANCELLED"];
@@ -80,6 +81,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    if (!isSameOrigin(req)) return forbiddenResponse();
     const user = await requireAuth();
     if (!user) return unauthorizedResponse();
 

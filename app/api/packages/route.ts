@@ -3,7 +3,8 @@ import { connectDB } from "@/lib/db";
 import Package from "@/models/Package";
 import { requireRole } from "@/lib/rbac";
 import { packageSchema } from "@/lib/validations";
-import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import { isSameOrigin } from "@/lib/security";
+import { successResponse, errorResponse, unauthorizedResponse, forbiddenResponse } from "@/lib/api-response";
 import type { PackageCategory } from "@/types";
 
 const CATEGORIES: PackageCategory[] = ["WEDDING", "CORPORATE", "BIRTHDAY", "SOCIAL", "OTHER"];
@@ -43,6 +44,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    if (!isSameOrigin(req)) return forbiddenResponse();
     const user = await requireRole("ADMIN");
     if (!user) return unauthorizedResponse();
 

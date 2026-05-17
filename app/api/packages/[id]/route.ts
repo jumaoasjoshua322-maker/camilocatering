@@ -5,8 +5,9 @@ import Booking from "@/models/Booking";
 import { requireRole } from "@/lib/rbac";
 import { packageSchema } from "@/lib/validations";
 import { isValidObjectId } from "@/lib/mongo";
+import { isSameOrigin } from "@/lib/security";
 import {
-  successResponse, errorResponse, unauthorizedResponse, notFoundResponse,
+  successResponse, errorResponse, unauthorizedResponse, forbiddenResponse, notFoundResponse,
 } from "@/lib/api-response";
 
 export async function GET(
@@ -31,31 +32,37 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    if (!isSameOrigin(req)) return forbiddenResponse();
     const { id } = await params;
     const user = await requireRole("ADMIN");
     if (!user) return unauthorizedResponse();
     if (!isValidObjectId(id)) return notFoundResponse("Package");
 
-    const body = await req.json();
-    const isToggle = Object.keys(body).length === 1 && ("isActive" in body || "isFeatured" in body);
-    let updateData = body;
+    const body = (await req.json()) as Record<string, unknown>;
 
-    if (!isToggle) {
+    // Toggle path: only specific boolean flags allowed, never spread arbitrary keys.
+    const keys = Object.keys(body);
+    const isToggle =
+      keys.length === 1 &&
+      (keys[0] === "isActive" || keys[0] === "isFeatured");
+
+    let safeUpdate: Partial<{ isActive: boolean; isFeatured: boolean }> | Record<string, unknown>;
+    if (isToggle) {
+      const k = keys[0] as "isActive" | "isFeatured";
+      const v = body[k];
+      if (typeof v !== "boolean") return errorResponse("Invalid toggle value");
+      safeUpdate = { [k]: v };
+    } else {
       const parsed = packageSchema.safeParse(body);
       if (!parsed.success) return errorResponse(parsed.error.issues[0].message);
-      updateData = parsed.data;
-    } else if (typeof body.isActive !== "boolean" && typeof body.isFeatured !== "boolean") {
-      return errorResponse("Invalid toggle value");
+      safeUpdate = parsed.data;
     }
 
     await connectDB();
-    const pkg = await Package.findById(id);
-    if (!pkg) return notFoundResponse("Package");
+    const updated = await Package.findByIdAndUpdate(id, { $set: safeUpdate }, { new: true });
+    if (!updated) return notFoundResponse("Package");
 
-    Object.assign(pkg, updateData);
-    await pkg.save();
-
-    return successResponse({ ...pkg.toObject(), _id: pkg._id.toString() });
+    return successResponse({ ...updated.toObject(), _id: updated._id.toString() });
   } catch (err) {
     console.error("[PACKAGE_PATCH]", err);
     return errorResponse("Internal server error", 500);
@@ -63,10 +70,11 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    if (!isSameOrigin(req)) return forbiddenResponse();
     const { id } = await params;
     const user = await requireRole("ADMIN");
     if (!user) return unauthorizedResponse();

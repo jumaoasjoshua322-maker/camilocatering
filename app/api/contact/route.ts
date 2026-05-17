@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
 import nodemailer from "nodemailer";
 import { contactMessageSchema } from "@/lib/validations";
-import { successResponse, errorResponse } from "@/lib/api-response";
+import { successResponse, errorResponse, forbiddenResponse } from "@/lib/api-response";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { isSameOrigin } from "@/lib/security";
 import { connectDB } from "@/lib/db";
 import CompanySettings from "@/models/CompanySettings";
 
@@ -10,8 +11,9 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
+    if (!isSameOrigin(req)) return forbiddenResponse();
     const ip = getClientIp(req);
-    const limited = rateLimit(`contact:${ip}`, 5, 15 * 60 * 1000);
+    const limited = await rateLimit(`contact:${ip}`, 5, 15 * 60 * 1000);
     if (!limited.allowed) return errorResponse("Too many messages. Try again later.", 429);
 
     const body = await req.json();

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, GripVertical } from "lucide-react";
+import { Plus, Trash2, GripVertical, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,9 +53,26 @@ interface Props {
 export function CompanySettingsForm({ settings }: Props) {
   const router = useRouter();
   const [state, setState] = useState<SettingsFormState>(settings);
+  const [baseline, setBaseline] = useState<SettingsFormState>(settings);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+
+  const isDirty = useMemo(
+    () => JSON.stringify(state) !== JSON.stringify(baseline),
+    [state, baseline]
+  );
+
+  // Warn the admin if they try to leave with unsaved changes.
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
 
   function update<K extends keyof SettingsFormState>(field: K, value: SettingsFormState[K]) {
     setState((s) => ({ ...s, [field]: value }));
@@ -170,6 +187,7 @@ export function CompanySettingsForm({ settings }: Props) {
         return;
       }
       setSuccess(true);
+      setBaseline(state);
       router.refresh();
       setTimeout(() => setSuccess(false), 4000);
     } catch {
@@ -187,7 +205,7 @@ export function CompanySettingsForm({ settings }: Props) {
         </div>
       )}
       {success && (
-        <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700 dark:bg-green-950 dark:border-green-800 dark:text-green-300">
+        <div className="sr-only" role="status" aria-live="polite">
           Settings saved successfully
         </div>
       )}
@@ -410,24 +428,66 @@ export function CompanySettingsForm({ settings }: Props) {
         </TabsContent>
       </Tabs>
 
-      <div className="flex items-center gap-3 sticky bottom-4">
-        <Button type="submit" loading={loading}>Save Changes</Button>
-        <a
-          href="/about"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-neutral-500 hover:text-amber-600"
+      <div className="sticky bottom-4 z-10">
+        <div
+          className={`flex items-center justify-between gap-4 rounded-xl border bg-white px-4 py-3 shadow-lg dark:bg-neutral-900 transition-colors ${
+            isDirty
+              ? "border-amber-300 ring-1 ring-amber-200 dark:border-amber-700 dark:ring-amber-900/40"
+              : "border-neutral-200 dark:border-neutral-800"
+          }`}
         >
-          Preview /about ↗
-        </a>
-        <a
-          href="/contact"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-neutral-500 hover:text-amber-600"
-        >
-          Preview /contact ↗
-        </a>
+          <div className="flex items-center gap-2 text-sm">
+            {isDirty ? (
+              <>
+                <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                <span className="font-medium text-amber-700 dark:text-amber-400">
+                  You have unsaved changes
+                </span>
+              </>
+            ) : success ? (
+              <>
+                <Check className="h-4 w-4 text-green-600" />
+                <span className="font-medium text-green-700 dark:text-green-400">
+                  All changes saved
+                </span>
+              </>
+            ) : (
+              <span className="text-neutral-500">No changes yet</span>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            {isDirty && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setState(baseline)}
+                disabled={loading}
+              >
+                Discard
+              </Button>
+            )}
+            <a
+              href="/about"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:inline text-sm text-neutral-500 hover:text-amber-600"
+            >
+              Preview /about ↗
+            </a>
+            <a
+              href="/contact"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:inline text-sm text-neutral-500 hover:text-amber-600"
+            >
+              Preview /contact ↗
+            </a>
+            <Button type="submit" loading={loading} disabled={!isDirty || loading}>
+              Save Changes
+            </Button>
+          </div>
+        </div>
       </div>
     </form>
   );

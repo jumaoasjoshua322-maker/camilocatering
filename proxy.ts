@@ -21,6 +21,7 @@ export default auth((req) => {
     pathname.startsWith("/api/register") ||
     pathname.startsWith("/api/packages") ||
     pathname.startsWith("/api/company") ||
+    pathname.startsWith("/api/contact") ||
     pathname.startsWith("/api/payments");
 
   if (isPublic) return NextResponse.next();

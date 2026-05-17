@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# user-uploaded media (keep folder, ignore content)
+/public/uploads/*
+!/public/uploads/.gitkeep

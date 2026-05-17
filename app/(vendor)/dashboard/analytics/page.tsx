@@ -3,7 +3,7 @@ import Booking from "@/models/Booking";
 import Package from "@/models/Package";
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, TrendingUp, Calendar, DollarSign } from "lucide-react";
+import { BarChart3, TrendingUp, Calendar, PhilippinePeso } from "lucide-react";
 
 export const metadata = { title: "Analytics" };
 
@@ -109,7 +109,7 @@ export default async function AnalyticsPage() {
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm text-neutral-500">Total Revenue</span>
               <div className="h-8 w-8 rounded-lg bg-green-50 dark:bg-green-900/20 flex items-center justify-center">
-                <DollarSign className="h-4 w-4 text-green-600" />
+                <PhilippinePeso className="h-4 w-4 text-green-600" />
               </div>
             </div>
             <div className="text-2xl font-bold text-neutral-900 dark:text-white">

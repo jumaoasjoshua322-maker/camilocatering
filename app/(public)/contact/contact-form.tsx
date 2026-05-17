@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 export function ContactForm() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -19,15 +20,27 @@ export function ContactForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    setError("");
 
-    // Mock submission - in production, send to API
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    setSuccess(true);
-    setLoading(false);
-    setFormData({ name: "", email: "", phone: "", message: "" });
-
-    setTimeout(() => setSuccess(false), 5000);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to send message");
+        return;
+      }
+      setSuccess(true);
+      setFormData({ name: "", email: "", phone: "", message: "" });
+      setTimeout(() => setSuccess(false), 6000);
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (success) {
@@ -37,7 +50,7 @@ export function ContactForm() {
           Message sent successfully!
         </p>
         <p className="text-sm text-green-600 dark:text-green-500">
-          We'll get back to you within 24 hours.
+          We&apos;ll get back to you within 24 hours.
         </p>
       </div>
     );
@@ -45,6 +58,11 @@ export function ContactForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      {error && (
+        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 dark:bg-red-950 dark:border-red-800 dark:text-red-300">
+          {error}
+        </div>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="name">Name</Label>

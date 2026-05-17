@@ -6,7 +6,7 @@ import User from "@/models/User";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, Package as PackageIcon, DollarSign, Users } from "lucide-react";
+import { CalendarDays, Package as PackageIcon, PhilippinePeso, Users } from "lucide-react";
 import type { BookingStatus } from "@/types";
 
 const statusVariant: Record<BookingStatus, "default" | "success" | "warning" | "danger" | "neutral"> = {
@@ -46,7 +46,7 @@ export default async function DashboardPage() {
     { label: "Pending Review", value: pendingBookings, icon: CalendarDays, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-900/20" },
     { label: "Active Packages", value: totalPackages, icon: PackageIcon, color: "text-purple-600", bg: "bg-purple-50 dark:bg-purple-900/20" },
     { label: "Total Customers", value: totalCustomers, icon: Users, color: "text-green-600", bg: "bg-green-50 dark:bg-green-900/20" },
-    { label: "Total Revenue", value: formatCurrency(revenue), icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-900/20", wide: true },
+    { label: "Total Revenue", value: formatCurrency(revenue), icon: PhilippinePeso, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-900/20", wide: true },
   ];
 
   return (

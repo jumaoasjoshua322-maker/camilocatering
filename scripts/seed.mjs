@@ -13,6 +13,11 @@ if (!MONGODB_URI) {
   process.exit(1);
 }
 
+if (process.env.NODE_ENV === "production" && process.env.ALLOW_PRODUCTION_SEED !== "1") {
+  console.error("❌  Refusing to run seed in production. Set ALLOW_PRODUCTION_SEED=1 to override.");
+  process.exit(1);
+}
+
 if (MONGODB_URI.includes("<username>") || MONGODB_URI.includes("<password>")) {
   console.error("MONGODB_URI still contains placeholder values. Update .env.local with your real MongoDB connection string before seeding.");
   process.exit(1);

@@ -90,18 +90,16 @@ export function Navbar() {
                         onClick={() => setUserMenuOpen(false)}
                         className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                       >
-                        <LayoutDashboard className="h-4 w-4" />
-                        {session.user.role === "ADMIN" || session.user.role === "STAFF" ? "Dashboard" : "My Bookings"}
+                        {session.user.role === "ADMIN" || session.user.role === "STAFF" ? (
+                          <>
+                            <LayoutDashboard className="h-4 w-4" /> Dashboard
+                          </>
+                        ) : (
+                          <>
+                            <CalendarDays className="h-4 w-4" /> My Bookings
+                          </>
+                        )}
                       </Link>
-                      {session.user.role === "CUSTOMER" && (
-                        <Link
-                          href="/bookings"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                        >
-                          <CalendarDays className="h-4 w-4" /> My Bookings
-                        </Link>
-                      )}
                       <div className="border-t border-neutral-100 dark:border-neutral-800">
                         <button
                           onClick={() => signOut({ callbackUrl: "/" })}

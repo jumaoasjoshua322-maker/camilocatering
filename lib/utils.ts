@@ -26,7 +26,3 @@ export function slugify(text: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 }
-
-export function generateTenantId(): string {
-  return `tenant_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-}

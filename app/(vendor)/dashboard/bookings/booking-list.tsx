@@ -84,18 +84,40 @@ export function BookingList({ role }: Props) {
   useEffect(() => { fetchBookings(); }, [fetchBookings]);
 
   useEffect(() => {
-    const interval = window.setInterval(() => {
-      fetchBookings(true);
-    }, 3000);
+    const POLL_MS = 15_000;
+    let timer: number | undefined;
 
-    const refreshOnFocus = () => fetchBookings(true);
-    window.addEventListener("focus", refreshOnFocus);
-    document.addEventListener("visibilitychange", refreshOnFocus);
+    const tick = () => {
+      if (document.visibilityState === "visible") fetchBookings(true);
+    };
+
+    const start = () => {
+      stop();
+      timer = window.setInterval(tick, POLL_MS);
+    };
+
+    const stop = () => {
+      if (timer !== undefined) {
+        window.clearInterval(timer);
+        timer = undefined;
+      }
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        tick();
+        start();
+      } else {
+        stop();
+      }
+    };
+
+    if (document.visibilityState === "visible") start();
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
-      window.clearInterval(interval);
-      window.removeEventListener("focus", refreshOnFocus);
-      document.removeEventListener("visibilitychange", refreshOnFocus);
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [fetchBookings]);
 

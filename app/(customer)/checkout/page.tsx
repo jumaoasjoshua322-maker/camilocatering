@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
@@ -12,6 +12,7 @@ function CheckoutForm() {
   const bookingId = searchParams.get("bookingId");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const formRef = useRef<HTMLFormElement | null>(null);
 
   useEffect(() => {
     if (!clientKey || !bookingId) {
@@ -20,55 +21,31 @@ function CheckoutForm() {
       return;
     }
 
-    const script = document.createElement("script");
-    script.src = "https://js.paymongo.com/v1/paymongo.js";
-    script.async = true;
-    script.onload = () => {
-      setLoading(false);
-      initializePayMongo();
-    };
-    script.onerror = () => {
-      setError("Failed to load payment provider");
-      setLoading(false);
-    };
-    document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, [clientKey, bookingId]);
-
-  function initializePayMongo() {
-    if (!clientKey) return;
-
-    const paymongoPublicKey = process.env.NEXT_PUBLIC_PAYMONGO_PUBLIC_KEY;
-    if (!paymongoPublicKey) {
-      setError("Payment configuration error");
-      return;
-    }
-
-    // @ts-expect-error PayMongo SDK
-    const paymongo = window.PayMongo(paymongoPublicKey);
-
-    const elements = paymongo.elements({ clientKey });
-    const cardElement = elements.create("card", {
-      style: {
-        base: {
-          fontSize: "16px",
-          color: "#0f0f0f",
-          "::placeholder": { color: "#a3a3a3" },
-        },
-      },
-    });
-
-    cardElement.mount("#card-element");
-
-    const form = document.getElementById("payment-form");
-    form?.addEventListener("submit", async (e) => {
+    let cancelled = false;
+    const submitHandler = async (e: Event) => {
       e.preventDefault();
+      if (!clientKey) return;
       setLoading(true);
 
       try {
+        const w = window as unknown as { PayMongo?: (key: string) => unknown };
+        const sdk = w.PayMongo;
+        if (!sdk) {
+          setError("Payment provider not ready");
+          setLoading(false);
+          return;
+        }
+        const publicKey = process.env.NEXT_PUBLIC_PAYMONGO_PUBLIC_KEY;
+        if (!publicKey) {
+          setError("Payment configuration error");
+          setLoading(false);
+          return;
+        }
+        const paymongo = sdk(publicKey) as {
+          elements: (opts: { clientKey: string }) => unknown;
+          confirmPayment: (opts: { elements: unknown; redirect: string }) => Promise<{ error?: { message?: string } }>;
+        };
+        const elements = paymongo.elements({ clientKey });
         const { error: paymentError } = await paymongo.confirmPayment({
           elements,
           redirect: "if_required",
@@ -80,12 +57,65 @@ function CheckoutForm() {
         } else {
           router.push(`/bookings/${bookingId}?payment=success`);
         }
-      } catch (err) {
+      } catch {
         setError("Payment processing failed");
         setLoading(false);
       }
-    });
-  }
+    };
+
+    const script = document.createElement("script");
+    script.src = "https://js.paymongo.com/v1/paymongo.js";
+    script.async = true;
+    script.onload = () => {
+      if (cancelled) return;
+      setLoading(false);
+      mountCardElement();
+    };
+    script.onerror = () => {
+      if (cancelled) return;
+      setError("Failed to load payment provider");
+      setLoading(false);
+    };
+    document.body.appendChild(script);
+
+    function mountCardElement() {
+      const w = window as unknown as { PayMongo?: (key: string) => unknown };
+      const sdk = w.PayMongo;
+      const publicKey = process.env.NEXT_PUBLIC_PAYMONGO_PUBLIC_KEY;
+      if (!sdk || !publicKey || !clientKey) {
+        setError("Payment configuration error");
+        return;
+      }
+      const paymongo = sdk(publicKey) as {
+        elements: (opts: { clientKey: string }) => {
+          create: (kind: string, opts?: unknown) => { mount: (sel: string) => void };
+        };
+      };
+      const elements = paymongo.elements({ clientKey });
+      const cardElement = elements.create("card", {
+        style: {
+          base: {
+            fontSize: "16px",
+            color: "#0f0f0f",
+            "::placeholder": { color: "#a3a3a3" },
+          },
+        },
+      });
+      cardElement.mount("#card-element");
+
+      formRef.current?.addEventListener("submit", submitHandler);
+    }
+
+    return () => {
+      cancelled = true;
+      formRef.current?.removeEventListener("submit", submitHandler);
+      // Only remove the script if it is still attached. React StrictMode and
+      // hot-reload can cause this cleanup to run twice.
+      if (script.parentNode === document.body) {
+        document.body.removeChild(script);
+      }
+    };
+  }, [clientKey, bookingId, router]);
 
   if (error) {
     return (
@@ -95,7 +125,7 @@ function CheckoutForm() {
             {error}
           </div>
           <button
-            onClick={() => router.push(`/bookings/${bookingId}`)}
+            onClick={() => router.push(`/bookings/${bookingId ?? ""}`)}
             className="mt-4 w-full inline-flex items-center justify-center h-10 px-4 text-sm font-medium rounded-lg border border-neutral-200 hover:bg-neutral-50 transition-colors"
           >
             Back to Booking
@@ -111,14 +141,13 @@ function CheckoutForm() {
         <CardTitle>Complete Payment</CardTitle>
       </CardHeader>
       <CardContent>
-        <form id="payment-form" className="flex flex-col gap-4">
+        <form ref={formRef} id="payment-form" className="flex flex-col gap-4">
           <div id="card-element" className="p-4 border border-neutral-200 rounded-lg dark:border-neutral-700" />
-          {loading && (
+          {loading ? (
             <div className="flex items-center justify-center py-4">
               <Loader2 className="h-6 w-6 animate-spin text-amber-600" />
             </div>
-          )}
-          {!loading && (
+          ) : (
             <button
               type="submit"
               className="w-full inline-flex items-center justify-center h-11 px-6 font-medium rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition-colors"

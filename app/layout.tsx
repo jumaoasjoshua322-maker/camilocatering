@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     default: "Camilo's Catering",
     template: "%s | Camilo's Catering",
   },
-  description: "Premium multi-tenant event catering booking platform",
+  description: "Premium event catering booking platform",
   keywords: ["catering", "events", "wedding", "booking", "Philippines"],
 };
 

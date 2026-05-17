@@ -10,24 +10,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const { values, errors, handleChange, setValue, validate } = useForm({
+  const { values, errors, handleChange, validate } = useForm({
     name: "",
     email: "",
     password: "",
-    role: "CUSTOMER" as "CUSTOMER" | "VENDOR_ADMIN",
   });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const result = validate(registerSchema);
-    if (!result) return;
+    if (!validate(registerSchema)) return;
 
     setLoading(true);
     setError("");
@@ -39,21 +36,29 @@ export default function RegisterPage() {
     });
 
     const data = await res.json();
-
     if (!res.ok) {
       setError(data.error || "Registration failed");
       setLoading(false);
       return;
     }
 
-    // Auto sign-in after registration
-    await signIn("credentials", {
+    // Auto sign-in after registration. If sign-in fails for any reason,
+    // hand off to the login page rather than dropping the user on a
+    // protected route while unauthenticated.
+    const signInResult = await signIn("credentials", {
       email: values.email,
       password: values.password,
       redirect: false,
     });
 
-    router.push(values.role === "VENDOR_ADMIN" ? "/dashboard" : "/");
+    setLoading(false);
+
+    if (signInResult?.error) {
+      router.push("/login?registered=1");
+      return;
+    }
+
+    router.push("/bookings");
     router.refresh();
   }
 
@@ -71,36 +76,15 @@ export default function RegisterPage() {
             </div>
           )}
 
-          {/* Role selector */}
-          <div className="grid grid-cols-2 gap-3">
-            {(["CUSTOMER", "VENDOR_ADMIN"] as const).map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => setValue("role", r)}
-                className={cn(
-                  "rounded-lg border-2 p-3 text-sm font-medium transition-all text-left",
-                  values.role === r
-                    ? "border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300"
-                    : "border-neutral-200 text-neutral-600 hover:border-neutral-300 dark:border-neutral-700 dark:text-neutral-400"
-                )}
-              >
-                <div className="font-semibold">{r === "CUSTOMER" ? "Customer" : "Vendor"}</div>
-                <div className="text-xs mt-0.5 opacity-70">
-                  {r === "CUSTOMER" ? "Book catering events" : "List your business"}
-                </div>
-              </button>
-            ))}
-          </div>
-
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="name">{values.role === "VENDOR_ADMIN" ? "Business Name" : "Full Name"}</Label>
+            <Label htmlFor="name">Full Name</Label>
             <Input
               id="name"
-              placeholder={values.role === "VENDOR_ADMIN" ? "Camilo's Kitchen" : "Juan dela Cruz"}
+              placeholder="Juan dela Cruz"
               value={values.name}
               onChange={handleChange("name")}
               error={errors.name}
+              autoComplete="name"
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -112,6 +96,7 @@ export default function RegisterPage() {
               value={values.email}
               onChange={handleChange("email")}
               error={errors.email}
+              autoComplete="email"
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -123,6 +108,7 @@ export default function RegisterPage() {
               value={values.password}
               onChange={handleChange("password")}
               error={errors.password}
+              autoComplete="new-password"
             />
           </div>
           <Button type="submit" loading={loading} className="w-full mt-2">

@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { connectDB } from "@/lib/db";
 import Package from "@/models/Package";
 import { formatCurrency } from "@/lib/utils";

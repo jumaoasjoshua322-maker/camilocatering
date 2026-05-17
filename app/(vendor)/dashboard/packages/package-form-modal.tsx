@@ -53,7 +53,7 @@ export function PackageFormModal({ open, onClose, editing, onSaved }: Props) {
   const [inclusions, setInclusions] = useState<string[]>([""]);
   const [inclusionError, setInclusionError] = useState("");
 
-  const { values, errors, handleChange, setValue, validate, reset, setValues } =
+  const { values, errors, handleChange, setValue, reset, setValues } =
     useForm({
       name: "",
       description: "",
@@ -62,7 +62,6 @@ export function PackageFormModal({ open, onClose, editing, onSaved }: Props) {
       minGuests: 1,
       maxGuests: 100,
     });
-
   // Populate form when editing
   useEffect(() => {
     if (editing) {
@@ -154,7 +153,13 @@ export function PackageFormModal({ open, onClose, editing, onSaved }: Props) {
       inclusions: cleanInclusions,
     };
 
-    if (!validate(packageSchema)) return;
+    // Validate the full payload, not just the form-state fields,
+    // so inclusions is part of the schema check.
+    const parsed = packageSchema.safeParse(payload);
+    if (!parsed.success) {
+      setError(parsed.error.issues[0].message);
+      return;
+    }
 
     setLoading(true);
     setError("");
@@ -165,7 +170,7 @@ export function PackageFormModal({ open, onClose, editing, onSaved }: Props) {
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(parsed.data),
     });
 
     const json = await res.json();

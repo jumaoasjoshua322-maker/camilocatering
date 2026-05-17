@@ -129,10 +129,10 @@ export function BookingForm({ packages, defaultPackageId }: Props) {
               View My Bookings
             </button>
             <button
-              onClick={() => router.push("/vendors")}
+              onClick={() => router.push("/services")}
               className="inline-flex items-center justify-center h-10 px-5 text-sm font-medium rounded-lg border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition-colors dark:border-neutral-700 dark:text-neutral-300"
             >
-              Browse More
+              Browse Packages
             </button>
           </div>
         </CardContent>

@@ -7,6 +7,14 @@ Format:
 
 ---
 
+## 2026-05-18 · React 19 / Compiler `set-state-in-effect` is overly strict
+
+**What went wrong.** During the `BookingList` move, the React Compiler's `set-state-in-effect` rule flagged the standard data-fetch effect: `useEffect(() => { fetchBookings(); }, [fetchBookings])` where `fetchBookings` calls `setLoading(true)` synchronously on entry. I tried two refactors to satisfy the rule (AbortController + extracted setLoading) and the rule kept flagging the call site through `useCallback`. The project ships with this same warning everywhere we have a "fetch on mount" effect.
+
+**Rule.** This rule cannot follow `// eslint-disable-next-line` directives because it's enforced by Next 16's React Compiler, not ESLint. **Don't refactor working data-fetch effects to chase this warning** — the runtime behavior matches React's own docs. Treat it as a known editor noise. If we ever migrate to React Server Component-only data fetching, the warnings will go away naturally.
+
+---
+
 ## 2026-05-18 · `git add -A` swept up unrelated working-tree changes
 
 **What went wrong.** I ran `git add -A` to stage docs files and accidentally swept up an unrelated `lib/mongoose-model.ts` + a refactor of every model that had been sitting in the working tree (probably from an earlier autosave or hook). The commit message claimed it was just a docs change, but the diff included a real schema change. The model refactor is good code, but bundling it under a docs commit is dishonest history.

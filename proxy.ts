@@ -22,7 +22,7 @@ export default auth((req) => {
     pathname.startsWith("/api/packages") ||
     pathname.startsWith("/api/company") ||
     pathname.startsWith("/api/contact") ||
-    pathname.startsWith("/api/payments");
+    pathname.startsWith("/api/payments/webhook");
 
   if (isPublic) return NextResponse.next();
 

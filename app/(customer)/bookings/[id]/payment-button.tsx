@@ -57,7 +57,7 @@ export function PaymentButton({ bookingId, amount }: Props) {
         Pay {formatCurrency(amount)}
       </Button>
       <p className="text-xs text-center text-neutral-400">
-        Temporary local payment for development
+        Secure payment via PayMongo
       </p>
     </div>
   );

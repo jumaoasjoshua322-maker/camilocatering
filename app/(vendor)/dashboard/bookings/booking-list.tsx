@@ -22,7 +22,6 @@ interface BookingItem {
   notes?: string;
   packageId: { name: string; category: string } | null;
   customerId: { name: string; email: string } | null;
-  vendorName?: string;
   cancellationRequest?: {
     _id: string;
     reason: string;
@@ -356,11 +355,6 @@ function BookingCard({
             {role === "vendor" && booking.customerId && (
               <p className="text-sm text-neutral-500 mb-2">
                 {booking.customerId.name} · {booking.customerId.email}
-              </p>
-            )}
-            {role === "customer" && booking.vendorName && (
-              <p className="text-sm text-neutral-500 mb-2">
-                Camilo&apos;s Catering
               </p>
             )}
 

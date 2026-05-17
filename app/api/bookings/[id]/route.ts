@@ -123,7 +123,6 @@ export async function PATCH(
     sendBookingConfirmation({
       customerName: (customer as { name: string })?.name || "Customer",
       customerEmail: (customer as { email: string })?.email || "",
-      vendorName: "Camilo's Catering",
       packageName: pkg?.name || "Package",
       eventDate: formatDate(updated.eventDate),
       venue: updated.venue,

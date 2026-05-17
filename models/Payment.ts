@@ -7,8 +7,6 @@ export interface PaymentDocument extends Document {
   amount: number;
   currency: string;
   status: "PENDING" | "SUCCEEDED" | "FAILED" | "REFUNDED";
-  stripePaymentIntentId?: string;
-  stripeClientSecret?: string;
   paymongoPaymentIntentId?: string;
   paymongoClientKey?: string;
   metadata?: Record<string, string>;
@@ -27,8 +25,6 @@ const PaymentSchema = new Schema<PaymentDocument>(
       enum: ["PENDING", "SUCCEEDED", "FAILED", "REFUNDED"],
       default: "PENDING",
     },
-    stripePaymentIntentId: { type: String, index: true },
-    stripeClientSecret: { type: String },
     paymongoPaymentIntentId: { type: String, index: true },
     paymongoClientKey: { type: String },
     metadata: { type: Map, of: String },

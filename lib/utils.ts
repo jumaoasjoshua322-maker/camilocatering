@@ -19,10 +19,3 @@ export function formatDate(date: Date | string): string {
     day: "numeric",
   }).format(new Date(date));
 }
-
-export function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}

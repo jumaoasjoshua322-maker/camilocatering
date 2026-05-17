@@ -123,7 +123,6 @@ export async function POST(req: NextRequest) {
     sendBookingConfirmation({
       customerName: (customer as { name: string })?.name || "Customer",
       customerEmail: (customer as { email: string })?.email || "",
-      vendorName: "Camilo's Catering",
       packageName: pkg.name,
       eventDate: formatDate(new Date(eventDate)),
       venue,

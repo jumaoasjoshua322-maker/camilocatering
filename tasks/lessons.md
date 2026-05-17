@@ -7,6 +7,14 @@ Format:
 
 ---
 
+## 2026-05-18 · `git add -A` swept up unrelated working-tree changes
+
+**What went wrong.** I ran `git add -A` to stage docs files and accidentally swept up an unrelated `lib/mongoose-model.ts` + a refactor of every model that had been sitting in the working tree (probably from an earlier autosave or hook). The commit message claimed it was just a docs change, but the diff included a real schema change. The model refactor is good code, but bundling it under a docs commit is dishonest history.
+
+**Rule.** Before committing, **always run `git status --short` and explicitly stage only what the commit message describes**. Use `git add <path>` per file; reserve `git add -A` for moments when you've personally just touched everything in the diff. If unrelated changes exist in the working tree, commit them separately with their own message first, or stash them.
+
+---
+
 ## 2026-05-18 · Image upload broken on both edges
 
 **What went wrong.** Backend was returning 201 with valid URLs, files landed on disk, but the browser showed a broken-image icon. I assumed the backend was the suspect and almost re-validated the magic-byte sniff before tracing.

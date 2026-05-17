@@ -1,4 +1,5 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
+import { defineModel } from "@/lib/mongoose-model";
 import type { BookingStatus } from "@/types";
 
 export interface BookingDocument extends Document {
@@ -40,8 +41,6 @@ BookingSchema.index({ status: 1, eventDate: 1 });
 BookingSchema.index({ customerId: 1, status: 1 });
 BookingSchema.index({ packageId: 1, status: 1, paidAt: -1 });
 
-const Booking: Model<BookingDocument> =
-  mongoose.models.Booking ??
-  mongoose.model<BookingDocument>("Booking", BookingSchema);
+const Booking = defineModel<BookingDocument>("Booking", BookingSchema);
 
 export default Booking;

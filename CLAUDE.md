@@ -8,13 +8,14 @@ These rules apply to every change made in this repository. Read them at the star
 
 ### 1. Plan Mode Default
 - Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions).
+- For simple, directed asks (rename, single bug fix, copy edit) just go.
 - If something goes sideways, STOP and re-plan immediately.
 - Use plan mode for verification steps, not just building.
 - Write detailed specs upfront to reduce ambiguity.
 
 ### 2. Subagent Strategy
-- Use subagents liberally to keep the main context window clean.
-- Offload research, exploration, and parallel analysis to subagents.
+- Use subagents when the task genuinely benefits from isolated context or parallel work (broad codebase sweeps, deep research, indexing many files).
+- Don't reach for a subagent on small directed tasks you can finish faster yourself.
 - For complex problems, throw more compute at it via subagents.
 - One task per subagent for focused execution.
 

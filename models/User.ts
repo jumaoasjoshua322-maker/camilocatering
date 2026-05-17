@@ -1,4 +1,5 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
+import { defineModel } from "@/lib/mongoose-model";
 import type { UserRole } from "@/types";
 
 export interface UserDocument extends Document {
@@ -32,7 +33,6 @@ const UserSchema = new Schema<UserDocument>(
 
 UserSchema.index({ role: 1 });
 
-const User: Model<UserDocument> =
-  mongoose.models.User ?? mongoose.model<UserDocument>("User", UserSchema);
+const User = defineModel<UserDocument>("User", UserSchema);
 
 export default User;

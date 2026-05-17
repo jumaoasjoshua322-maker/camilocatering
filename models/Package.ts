@@ -1,4 +1,5 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
+import { defineModel } from "@/lib/mongoose-model";
 import type { PackageCategory } from "@/types";
 
 export interface PackageDocument extends Document {
@@ -39,8 +40,6 @@ const PackageSchema = new Schema<PackageDocument>(
 PackageSchema.index({ category: 1, isActive: 1 });
 PackageSchema.index({ isFeatured: 1 });
 
-const Package: Model<PackageDocument> =
-  mongoose.models.Package ??
-  mongoose.model<PackageDocument>("Package", PackageSchema);
+const Package = defineModel<PackageDocument>("Package", PackageSchema);
 
 export default Package;

@@ -1,4 +1,5 @@
-import mongoose, { Schema, Model } from "mongoose";
+import mongoose, { Schema } from "mongoose";
+import { defineModel } from "@/lib/mongoose-model";
 
 export interface WebhookEventDocument {
   source: "paymongo";
@@ -22,8 +23,6 @@ const WebhookEventSchema = new Schema<WebhookEventDocument>(
 WebhookEventSchema.index({ source: 1, eventId: 1 }, { unique: true });
 WebhookEventSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-const WebhookEvent: Model<WebhookEventDocument> =
-  mongoose.models.WebhookEvent ??
-  mongoose.model<WebhookEventDocument>("WebhookEvent", WebhookEventSchema);
+const WebhookEvent = defineModel<WebhookEventDocument>("WebhookEvent", WebhookEventSchema);
 
 export default WebhookEvent;

@@ -1,4 +1,5 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
+import { defineModel } from "@/lib/mongoose-model";
 
 export interface CancellationRequestDocument extends Document {
   bookingId: mongoose.Types.ObjectId;
@@ -26,8 +27,9 @@ const CancellationRequestSchema = new Schema<CancellationRequestDocument>(
 
 CancellationRequestSchema.index({ bookingId: 1, status: 1 });
 
-const CancellationRequest: Model<CancellationRequestDocument> =
-  mongoose.models.CancellationRequest ??
-  mongoose.model<CancellationRequestDocument>("CancellationRequest", CancellationRequestSchema);
+const CancellationRequest = defineModel<CancellationRequestDocument>(
+  "CancellationRequest",
+  CancellationRequestSchema
+);
 
 export default CancellationRequest;

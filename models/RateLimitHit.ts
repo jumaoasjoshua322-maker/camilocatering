@@ -1,4 +1,5 @@
-import mongoose, { Schema, Model } from "mongoose";
+import mongoose, { Schema } from "mongoose";
+import { defineModel } from "@/lib/mongoose-model";
 
 export interface RateLimitHitDocument {
   key: string;
@@ -18,8 +19,6 @@ const RateLimitHitSchema = new Schema<RateLimitHitDocument>(
 // Auto-delete documents whose window has expired.
 RateLimitHitSchema.index({ resetAt: 1 }, { expireAfterSeconds: 0 });
 
-const RateLimitHit: Model<RateLimitHitDocument> =
-  mongoose.models.RateLimitHit ??
-  mongoose.model<RateLimitHitDocument>("RateLimitHit", RateLimitHitSchema);
+const RateLimitHit = defineModel<RateLimitHitDocument>("RateLimitHit", RateLimitHitSchema);
 
 export default RateLimitHit;

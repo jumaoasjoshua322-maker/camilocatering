@@ -1,4 +1,5 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
+import { defineModel } from "@/lib/mongoose-model";
 
 export interface PaymentDocument extends Document {
   bookingId: mongoose.Types.ObjectId;
@@ -35,8 +36,6 @@ const PaymentSchema = new Schema<PaymentDocument>(
   { timestamps: true }
 );
 
-const Payment: Model<PaymentDocument> =
-  mongoose.models.Payment ??
-  mongoose.model<PaymentDocument>("Payment", PaymentSchema);
+const Payment = defineModel<PaymentDocument>("Payment", PaymentSchema);
 
 export default Payment;

@@ -1,4 +1,5 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
+import { defineModel } from "@/lib/mongoose-model";
 
 export interface AboutValueItem {
   title: string;
@@ -132,8 +133,11 @@ const CompanySettingsSchema = new Schema<CompanySettingsDocument>(
   { timestamps: true }
 );
 
-const CompanySettings: Model<CompanySettingsDocument> =
-  mongoose.models.CompanySettings ??
-  mongoose.model<CompanySettingsDocument>("CompanySettings", CompanySettingsSchema);
+// Use defineModel so dev hot-reload picks up schema changes (new fields,
+// new subdocs) without silently dropping data. See lib/mongoose-model.ts.
+const CompanySettings = defineModel<CompanySettingsDocument>(
+  "CompanySettings",
+  CompanySettingsSchema
+);
 
 export default CompanySettings;

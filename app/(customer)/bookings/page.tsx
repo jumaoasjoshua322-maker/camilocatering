@@ -1,4 +1,4 @@
-import { BookingList } from "@/app/(vendor)/dashboard/bookings/booking-list";
+import { BookingList } from "@/components/shared/booking-list";
 
 export const metadata = { title: "My Bookings" };
 

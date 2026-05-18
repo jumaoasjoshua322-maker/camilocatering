@@ -65,11 +65,12 @@ export default async function SettingsPage() {
   };
 
   return (
-    <div className="max-w-5xl">
+    <div className="max-w-7xl">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Settings</h1>
         <p className="text-sm text-neutral-500 mt-1">
-          Manage company info and the public homepage / About / Contact pages
+          Manage company info and the public homepage / About / Contact pages.
+          On wide screens, a live preview of the public site renders alongside.
         </p>
       </div>
       <CompanySettingsForm settings={initial} />

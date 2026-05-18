@@ -10,6 +10,8 @@ interface Props {
   onChange: (url: string) => void;
   label?: string;
   hint?: string;
+  /** Optional second line under the hint, e.g. "Recommended 1920x1080, landscape". */
+  recommended?: string;
   aspect?: "video" | "square" | "wide";
   className?: string;
 }
@@ -27,6 +29,7 @@ export function ImageUploadField({
   onChange,
   label,
   hint = "JPG, PNG, WebP or GIF up to 5 MB",
+  recommended,
   aspect = "video",
   className,
 }: Props) {
@@ -170,6 +173,9 @@ export function ImageUploadField({
       </div>
 
       <p className="text-xs text-neutral-400">{hint}</p>
+      {recommended && (
+        <p className="text-xs text-neutral-500">{recommended}</p>
+      )}
 
       {error && (
         <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">

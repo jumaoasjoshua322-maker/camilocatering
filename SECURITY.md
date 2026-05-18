@@ -11,7 +11,7 @@ This document captures the security posture of the app and what an operator must
 - PayMongo webhook verifies HMAC-SHA256 over `${timestamp}.${rawBody}` with timing-safe equality, rejects signatures older than 5 minutes, and dedupes events for 7 days via a unique `eventId`.
 - File uploads are admin-only, capped at 5 MB, and validated by inspecting the file's leading magic bytes (not the client-asserted MIME).
 - Local payment stub is gated behind `ENABLE_LOCAL_PAYMENT=1` and returns 503 in any other environment.
-- Strict security headers including HSTS preload, frame-ancestors none, COOP, CORP, no-sniff, and a CSP that drops `unsafe-eval` in production.
+- Strict security headers including HSTS preload, **frame-ancestors 'self' / X-Frame-Options SAMEORIGIN** (loosened from `none`/`DENY` so the admin Settings page can iframe the public site for live preview — cross-origin embedding is still blocked), COOP, CORP, no-sniff, and a CSP that drops `unsafe-eval` in production.
 - `seed.mjs` refuses to run with `NODE_ENV=production` unless `ALLOW_PRODUCTION_SEED=1`.
 
 ## Required environment variables

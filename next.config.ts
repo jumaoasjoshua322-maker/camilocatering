@@ -17,7 +17,9 @@ function csp() {
   return [
     "default-src 'self'",
     "base-uri 'self'",
-    "frame-ancestors 'none'",
+    // Same-origin only — required so /dashboard/settings can iframe the
+    // public site for live preview. Cross-origin embedding still blocked.
+    "frame-ancestors 'self'",
     "object-src 'none'",
     "form-action 'self'",
     "img-src 'self' data: blob: https:",
@@ -31,7 +33,10 @@ function csp() {
 
 const securityHeaders = [
   { key: "X-DNS-Prefetch-Control", value: "on" },
-  { key: "X-Frame-Options", value: "DENY" },
+  // SAMEORIGIN (not DENY) so the admin Settings page can iframe the public
+  // site for live preview. Modern browsers respect frame-ancestors over
+  // X-Frame-Options when both are present, but we set both for legacy.
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(self)" },

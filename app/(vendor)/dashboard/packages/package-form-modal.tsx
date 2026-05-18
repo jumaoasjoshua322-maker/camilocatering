@@ -252,6 +252,7 @@ export function PackageFormModal({ open, onClose, editing, onSaved }: Props) {
               label="Photo"
               aspect="video"
               hint="Landscape works best. Used on the public services page and search."
+              recommended="Recommended 1280×720, landscape. Center the food."
               value={imageUrl}
               onChange={setImageUrl}
             />

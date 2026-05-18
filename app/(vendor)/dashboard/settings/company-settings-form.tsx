@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ImageUploadField } from "@/components/ui/image-upload";
+import { SettingsPreviewPane } from "./settings-preview-pane";
 
 interface ValueItem {
   title: string;
@@ -64,6 +65,8 @@ export function CompanySettingsForm({ settings }: Props) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState<string>("company");
+  const [savedAt, setSavedAt] = useState<number>(() => Date.now());
 
   const isDirty = useMemo(
     () => JSON.stringify(state) !== JSON.stringify(baseline),
@@ -259,6 +262,7 @@ export function CompanySettingsForm({ settings }: Props) {
       }
       setSuccess(true);
       setBaseline(state);
+      setSavedAt(Date.now());
       router.refresh();
       setTimeout(() => setSuccess(false), 4000);
     } catch {
@@ -269,7 +273,8 @@ export function CompanySettingsForm({ settings }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="lg:col-span-7 flex flex-col gap-6">
       {error && (
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 dark:bg-red-950 dark:border-red-800 dark:text-red-300">
           {error}
@@ -281,7 +286,7 @@ export function CompanySettingsForm({ settings }: Props) {
         </div>
       )}
 
-      <Tabs defaultValue="company">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="company">Company</TabsTrigger>
           <TabsTrigger value="branding">Branding</TabsTrigger>
@@ -342,6 +347,7 @@ export function CompanySettingsForm({ settings }: Props) {
                 label="Logo"
                 aspect="square"
                 hint="Square logo, used in nav. JPG/PNG/WebP up to 5 MB"
+                recommended="Recommended 256×256, square. Shown in the navbar at 36px and in the footer."
                 value={state.logo}
                 onChange={(url) => update("logo", url)}
               />
@@ -349,6 +355,7 @@ export function CompanySettingsForm({ settings }: Props) {
                 label="Site Hero Image"
                 aspect="video"
                 hint="Used as a homepage banner. Wide image works best"
+                recommended="Recommended 1920×1080 or wider, landscape. Will be cropped on tall screens."
                 value={state.heroImage}
                 onChange={(url) => update("heroImage", url)}
               />
@@ -381,6 +388,7 @@ export function CompanySettingsForm({ settings }: Props) {
                 <ImageUploadField
                   label="Story Image"
                   aspect="video"
+                  recommended="Recommended 1280×720, landscape. Shown next to your story text."
                   value={state.about.storyImage}
                   onChange={(url) => updateAbout("storyImage", url)}
                 />
@@ -580,6 +588,7 @@ export function CompanySettingsForm({ settings }: Props) {
                         key={i}
                         label={`Tile ${i + 1}`}
                         aspect="square"
+                        recommended="Recommended 800×800, square. Each tile fills one corner of the 2×2 grid."
                         value={src}
                         onChange={(url) => setWhyImage(i, url)}
                       />
@@ -592,9 +601,9 @@ export function CompanySettingsForm({ settings }: Props) {
         </TabsContent>
       </Tabs>
 
-      <div className="sticky bottom-4 z-10">
+      <div className="sticky bottom-0 -mx-4 sm:mx-0 z-10 pt-4 pb-2 bg-gradient-to-t from-neutral-50 via-neutral-50 to-transparent dark:from-neutral-950 dark:via-neutral-950">
         <div
-          className={`flex items-center justify-between gap-4 rounded-xl border bg-white px-4 py-3 shadow-lg dark:bg-neutral-900 transition-colors ${
+          className={`flex items-center justify-between gap-4 rounded-xl border bg-white px-4 py-3 shadow-md dark:bg-neutral-900 transition-colors ${
             isDirty
               ? "border-amber-300 ring-1 ring-amber-200 dark:border-amber-700 dark:ring-amber-900/40"
               : "border-neutral-200 dark:border-neutral-800"
@@ -605,21 +614,21 @@ export function CompanySettingsForm({ settings }: Props) {
               <>
                 <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
                 <span className="font-medium text-amber-700 dark:text-amber-400">
-                  You have unsaved changes
+                  Unsaved changes
                 </span>
               </>
             ) : success ? (
               <>
                 <Check className="h-4 w-4 text-green-600" />
                 <span className="font-medium text-green-700 dark:text-green-400">
-                  All changes saved
+                  All saved
                 </span>
               </>
             ) : (
               <span className="text-neutral-500">No changes yet</span>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {isDirty && (
               <Button
                 type="button"
@@ -631,27 +640,17 @@ export function CompanySettingsForm({ settings }: Props) {
                 Discard
               </Button>
             )}
-            <a
-              href="/about"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden sm:inline text-sm text-neutral-500 hover:text-amber-600"
-            >
-              Preview /about ↗
-            </a>
-            <a
-              href="/contact"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden sm:inline text-sm text-neutral-500 hover:text-amber-600"
-            >
-              Preview /contact ↗
-            </a>
             <Button type="submit" loading={loading} disabled={!isDirty || loading}>
-              Save Changes
+              Save changes
             </Button>
           </div>
         </div>
+      </div>
+      </div>
+
+      {/* Live preview (lg+ only) */}
+      <div className="lg:col-span-5">
+        <SettingsPreviewPane tab={activeTab} savedAt={savedAt} />
       </div>
     </form>
   );

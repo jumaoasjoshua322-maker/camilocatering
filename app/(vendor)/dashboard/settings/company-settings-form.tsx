@@ -66,7 +66,10 @@ export function CompanySettingsForm({ settings }: Props) {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<string>("company");
-  const [savedAt, setSavedAt] = useState<number>(() => Date.now());
+  // Bumped on successful save to cache-bust the live preview iframe.
+  // Initial value is 0 (not Date.now()) so SSR and client agree on the
+  // initial src — otherwise we hit a hydration mismatch.
+  const [savedAt, setSavedAt] = useState<number>(0);
 
   const isDirty = useMemo(
     () => JSON.stringify(state) !== JSON.stringify(baseline),

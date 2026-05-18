@@ -6,49 +6,37 @@ _No active task. Next time you start non-trivial work, replace this section with
 
 ## Recently completed
 
-### Tier 2 redesign — photo-driven discovery + guided booking + status-aware detail
+### Tier 3 redesign — operational vendor dashboard
 
-#### Admin
-- Added Photo upload (`ImageUploadField`) and a Featured toggle to the package modal. Wedding inclusions enforcement preserved.
-- Loosened `imageUrl` validation in `lib/validations.ts` to accept either `https://` URLs or `/`-rooted paths so local uploads pass through.
-- Extended `PackageData` to carry `imageUrl` and `isFeatured`.
+#### Dashboard overview
+- Stat tiles are now `<Link>`s. Each tile navigates to the most useful filtered view: Total Bookings → all bookings, **Pending Review → status=PENDING (with pulsing alert dot when > 0)**, Active Packages → /dashboard/packages, Total Customers → all bookings, Total Revenue → /dashboard/analytics.
+- Two of the tiles plus the wide Revenue tile carry a **14-day sparkline** built with the existing `recharts` dep through a new `KpiSparkline` primitive. Zero-filled days so quiet stretches still render.
+- Welcome line surfaces a "X bookings need your review" deep-link when pending count > 0.
+- "Recent bookings" card is now a real `<table>` on `lg:` (sticky header columns: Status / Customer / Package / Event date / Amount), cards on mobile. View all link in the header.
 
-#### Public discovery
-- New shared `PackageCard` component (photo header, "Most popular" ribbon when featured, `from <price>` prefix, "best for" guest range, primary book CTA, scannable inclusions preview).
-- `/services` rewritten to use `PackageCard` and to left-align category filters with horizontal scroll on mobile.
+#### Bookings list
+- New URL-driven date range filter: `?range=next30 | upcoming | past30 | all`. Vendor only (customers usually have a handful of bookings, the filter is noise).
+- Replaced the "Update Status" dropdown with an explicit primary button per status:
+  - PENDING → Confirm booking
+  - CONFIRMED → Mark as paid
+  - PAID → Mark complete
+- Cancel stays as a quiet destructive action on PENDING/CONFIRMED.
+- Removed the now-dead local `TRANSITIONS` map (server still enforces the full table in `/api/bookings/[id]`).
 
-#### Booking flow
-- `/book` is now a 3-step wizard: Choose package → Event details → Review.
-- Stepper shows current/done state, "Continue" disabled until each step's required fields are valid.
-- Sticky summary sidebar with package photo on `lg:`.
-- `sessionStorage` draft on logged-out submit: stash form, redirect to `/login`, rehydrate on return so the user lands on the Review step with everything filled in.
-
-#### Customer booking detail
-- Page leads with package name + event date instead of `#ID`. ID demoted to a small mono badge.
-- Right column is status-aware: PENDING → "Awaiting confirmation" + 24h note; CONFIRMED → Pay block; PAID → "You're all set" + see-you-on-date; COMPLETED → quiet thanks; CANCELLED → rebook CTA.
-- Inclusions render as a 2-column checked list instead of dotted bullets.
-
-#### Bookings list (admin + customer)
-- Filter pills now scroll horizontally on mobile (was wrapping awkwardly).
+#### API
+- `GET /api/bookings` accepts `?range=`, validated, mapped to a `eventDate` window. Invalid values 400.
 
 ### Files touched
-- `lib/validations.ts`
-- `app/(vendor)/dashboard/packages/package-form-modal.tsx`
-- `app/(vendor)/dashboard/packages/package-manager.tsx`
-- `components/shared/package-card.tsx` (new)
-- `app/(public)/services/page.tsx`
-- `app/(public)/book/page.tsx`
-- `app/(public)/book/booking-form.tsx`
-- `app/(customer)/bookings/[id]/page.tsx`
+- `components/ui/kpi-sparkline.tsx` (new)
+- `app/(vendor)/dashboard/page.tsx`
 - `components/shared/booking-list.tsx`
+- `app/api/bookings/route.ts`
 
 ### Verification
-- `getDiagnostics`: no errors. All warnings are pre-existing tailwind v4 deprecation suggestions.
-- `npm run build`: ✓ Compiled successfully in 8.8s. (Post-compile tsc OOM is a known Windows shell heap issue.)
+- `getDiagnostics`: no errors (one pre-existing tailwind v4 deprecation warning).
+- `npm run build`: ✓ Compiled successfully in 8.3s.
 
-### Deferred to Tier 3 / 4
-- Vendor dashboard table layout + sparklines + clickable stat tiles
-- Date-range filter on bookings list
-- Vendor bookings: explicit next-action button by status (replace dropdown)
-- Settings live preview pane
-- Package list: photos on cards, Active/Archived tabs
+### Deferred to Tier 4
+- Settings live preview pane (split editor 60/40 with `<iframe>`)
+- Per-image upload hints (recommended dimensions per slot)
+- Sticky save bar → in-form footer

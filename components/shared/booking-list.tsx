@@ -6,7 +6,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { CalendarDays, MapPin, Users, ChevronDown, CreditCard, Eye, XCircle, X } from "lucide-react";
+import { CalendarDays, MapPin, Users, CreditCard, Eye, XCircle, X } from "lucide-react";
 import { FilterPillButton } from "@/components/ui/filter-pill";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LiveIndicator } from "@/components/ui/live-indicator";
@@ -46,13 +46,30 @@ const statusVariant: Record<BookingStatus, "default" | "success" | "warning" | "
   CANCELLED: "danger",
 };
 
-const TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
-  PENDING:   ["CONFIRMED", "CANCELLED"],
-  CONFIRMED: ["PAID", "CANCELLED"],
-  PAID:      ["COMPLETED", "CANCELLED"],
-  COMPLETED: [],
-  CANCELLED: [],
+/**
+ * Single forward action per status. The state machine has only one
+ * meaningful "next step" each, so a labelled primary button reads better
+ * than a dropdown. The server still enforces the full transition table
+ * in app/api/bookings/[id]/route.ts.
+ */
+const NEXT_STATUS: Partial<Record<BookingStatus, BookingStatus>> = {
+  PENDING: "CONFIRMED",
+  CONFIRMED: "PAID",
+  PAID: "COMPLETED",
 };
+
+const NEXT_LABEL: Partial<Record<BookingStatus, string>> = {
+  PENDING: "Confirm booking",
+  CONFIRMED: "Mark as paid",
+  PAID: "Mark complete",
+};
+
+const RANGE_OPTIONS: { key: string; label: string }[] = [
+  { key: "", label: "All dates" },
+  { key: "next30", label: "Next 30 days" },
+  { key: "upcoming", label: "All upcoming" },
+  { key: "past30", label: "Past 30 days" },
+];
 
 interface Props {
   role: "vendor" | "customer";
@@ -82,6 +99,7 @@ function BookingListInner({ role }: Props) {
   const searchParams = useSearchParams();
   const statusParam = searchParams.get("status") || "";
   const packageId = searchParams.get("packageId") || "";
+  const rangeParam = searchParams.get("range") || "";
 
   const [bookings, setBookings] = useState<BookingItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,6 +109,7 @@ function BookingListInner({ role }: Props) {
   const [paymentError, setPaymentError] = useState("");
   const [cancelingId, setCancelingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState("");
+  const [advancingId, setAdvancingId] = useState<string | null>(null);
 
   const filteredPackageName =
     packageId && bookings.length > 0
@@ -101,6 +120,13 @@ function BookingListInner({ role }: Props) {
     const sp = new URLSearchParams(searchParams.toString());
     if (next) sp.set("status", next);
     else sp.delete("status");
+    router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
+  }
+
+  function setRange(next: string) {
+    const sp = new URLSearchParams(searchParams.toString());
+    if (next) sp.set("range", next);
+    else sp.delete("range");
     router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
   }
 
@@ -115,6 +141,7 @@ function BookingListInner({ role }: Props) {
     const params = new URLSearchParams();
     if (statusParam) params.set("status", statusParam);
     if (packageId) params.set("packageId", packageId);
+    if (rangeParam) params.set("range", rangeParam);
     try {
       const res = await fetch(`/api/bookings?${params}`, { cache: "no-store" });
       const json = await res.json();
@@ -126,7 +153,7 @@ function BookingListInner({ role }: Props) {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [statusParam, packageId]);
+  }, [statusParam, packageId, rangeParam]);
 
   useEffect(() => { fetchBookings(); }, [fetchBookings]);
 
@@ -184,6 +211,14 @@ function BookingListInner({ role }: Props) {
 
     const json = await res.json().catch(() => null);
     setActionError(json?.error || "Unable to update booking");
+  }
+
+  async function handleAdvanceStatus(bookingId: string, currentStatus: BookingStatus) {
+    const next = NEXT_STATUS[currentStatus];
+    if (!next) return;
+    setAdvancingId(bookingId);
+    await handleStatusChange(bookingId, next);
+    setAdvancingId(null);
   }
 
   async function handleCancel(bookingId: string) {
@@ -255,6 +290,23 @@ function BookingListInner({ role }: Props) {
         {!loading && lastRefresh && <LiveIndicator since={lastRefresh} />}
       </div>
 
+      {/* Date range filter (vendor only — customers usually have few bookings) */}
+      {role === "vendor" && (
+        <div className="-mx-4 sm:mx-0 overflow-x-auto">
+          <div className="flex items-center gap-1 px-4 sm:px-0 min-w-max sm:min-w-0 sm:flex-wrap">
+            {RANGE_OPTIONS.map((r) => (
+              <FilterPillButton
+                key={r.key}
+                active={rangeParam === r.key}
+                onClick={() => setRange(r.key)}
+              >
+                {r.label}
+              </FilterPillButton>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* List */}
       {paymentError && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-400">
@@ -294,8 +346,10 @@ function BookingListInner({ role }: Props) {
               onStatusChange={handleStatusChange}
               onCancel={handleCancel}
               onPayment={handlePayment}
+              onAdvance={handleAdvanceStatus}
               paying={payingId === booking._id}
               canceling={cancelingId === booking._id}
+              advancing={advancingId === booking._id}
             />
           ))}
         </div>
@@ -310,20 +364,22 @@ function BookingCard({
   onStatusChange,
   onCancel,
   onPayment,
+  onAdvance,
   paying,
   canceling,
+  advancing,
 }: {
   booking: BookingItem;
   role: "vendor" | "customer";
   onStatusChange: (id: string, status: BookingStatus) => void;
   onCancel: (id: string) => void;
   onPayment: (id: string) => void;
+  onAdvance: (id: string, current: BookingStatus) => void;
   paying: boolean;
   canceling: boolean;
+  advancing: boolean;
 }) {
-  const [open, setOpen] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
-  const transitions = TRANSITIONS[booking.status];
   const canPay = role === "customer" && booking.status === "CONFIRMED";
   const canCancel = role === "customer" && (booking.status === "PENDING" || booking.status === "CONFIRMED");
 
@@ -448,34 +504,26 @@ function BookingCard({
               </div>
             )}
 
-            {/* Status actions — vendor only */}
-            {role === "vendor" && transitions.length > 0 && (
-              <div className="relative">
-                <button
-                  onClick={() => setOpen((o) => !o)}
-                  className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-neutral-200 hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800 transition-colors"
-                >
-                  Update Status <ChevronDown className="h-3.5 w-3.5" />
-                </button>
-                {open && (
-                  <div className="absolute right-0 mt-1 w-40 rounded-xl border border-neutral-200 bg-white shadow-lg dark:border-neutral-700 dark:bg-neutral-900 z-10">
-                    {transitions.map((s) => (
-                      <button
-                        key={s}
-                        onClick={() => {
-                          onStatusChange(booking._id, s);
-                          setOpen(false);
-                        }}
-                        className="flex w-full items-center px-4 py-2.5 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800 first:rounded-t-xl last:rounded-b-xl"
-                      >
-                        <Badge variant={statusVariant[s]} className="text-xs">
-                          {s}
-                        </Badge>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+            {/* Next action (vendor) — explicit primary button instead of a dropdown */}
+            {role === "vendor" && NEXT_STATUS[booking.status] && (
+              <button
+                onClick={() => onAdvance(booking._id, booking.status)}
+                disabled={advancing}
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-amber-700 px-3 text-sm font-medium text-white transition-colors hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {advancing ? "Updating..." : NEXT_LABEL[booking.status]}
+              </button>
+            )}
+
+            {/* Cancel (vendor) — quiet destructive */}
+            {role === "vendor" && (booking.status === "PENDING" || booking.status === "CONFIRMED") && (
+              <button
+                onClick={() => onStatusChange(booking._id, "CANCELLED")}
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/40"
+              >
+                <XCircle className="h-3.5 w-3.5" />
+                Cancel
+              </button>
             )}
           </div>
         </div>

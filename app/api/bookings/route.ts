@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
     const packageId = searchParams.get("packageId");
+    const range = searchParams.get("range");
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const limit = 20;
     const skip = (page - 1) * limit;
@@ -36,6 +37,23 @@ export async function GET(req: NextRequest) {
     if (packageId) {
       if (!/^[a-f\d]{24}$/i.test(packageId)) return errorResponse("Invalid package id");
       query.packageId = packageId;
+    }
+
+    // Date-range filter against eventDate. Bookmarkable via ?range=...
+    if (range) {
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      if (range === "next30") {
+        const end = new Date(todayStart.getTime() + 30 * 24 * 60 * 60 * 1000);
+        query.eventDate = { $gte: todayStart, $lt: end };
+      } else if (range === "past30") {
+        const start = new Date(todayStart.getTime() - 30 * 24 * 60 * 60 * 1000);
+        query.eventDate = { $gte: start, $lt: todayStart };
+      } else if (range === "upcoming") {
+        query.eventDate = { $gte: todayStart };
+      } else if (range !== "all") {
+        return errorResponse("Invalid date range");
+      }
     }
 
     const [bookings, total] = await Promise.all([

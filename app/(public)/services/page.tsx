@@ -38,7 +38,7 @@ export default async function ServicesPage({ searchParams }: Props) {
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-4">Our Services</h1>
+        <h1 className="font-display text-4xl sm:text-5xl text-neutral-900 dark:text-white mb-4">Our Services</h1>
         <p className="text-neutral-500 max-w-2xl mx-auto">
           Browse our complete range of catering packages for every occasion
         </p>
@@ -74,7 +74,7 @@ export default async function ServicesPage({ searchParams }: Props) {
               <CardContent className="p-6 flex flex-col gap-4">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h3 className="font-semibold text-lg text-neutral-900 dark:text-white group-hover:text-amber-600 transition-colors">
+                    <h3 className="font-display text-lg text-neutral-900 dark:text-white group-hover:text-amber-800 dark:group-hover:text-amber-400 transition-colors">
                       {pkg.name}
                     </h3>
                     <Badge className={`mt-2 ${categoryColors[pkg.category as PackageCategory]}`}>
@@ -85,7 +85,9 @@ export default async function ServicesPage({ searchParams }: Props) {
                     )}
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <div className="text-2xl font-bold text-amber-600">{formatCurrency(pkg.price)}</div>
+                    <div className="text-2xl font-semibold text-amber-800 dark:text-amber-400 tabular-nums">
+                      {formatCurrency(pkg.price)}
+                    </div>
                   </div>
                 </div>
 
@@ -112,9 +114,9 @@ export default async function ServicesPage({ searchParams }: Props) {
 
                 <Link
                   href={`/book?packageId=${pkg._id.toString()}`}
-                  className="mt-auto inline-flex items-center justify-center h-10 px-4 text-sm font-medium rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition-colors"
+                  className="mt-auto inline-flex items-center justify-center h-10 px-4 text-sm font-medium rounded-lg bg-amber-700 text-white hover:bg-amber-800 transition-colors"
                 >
-                  Book This Package
+                  Book this package
                 </Link>
               </CardContent>
             </Card>

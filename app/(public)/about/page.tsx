@@ -15,7 +15,7 @@ export default async function AboutPage() {
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
       {/* Hero */}
       <div className="text-center mb-16">
-        <h1 className="text-4xl sm:text-5xl font-bold text-neutral-900 dark:text-white mb-6">
+        <h1 className="font-display text-4xl sm:text-5xl text-neutral-900 dark:text-white mb-6">
           {about.heroTitle}
         </h1>
         <p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-3xl mx-auto leading-relaxed whitespace-pre-line">
@@ -25,7 +25,7 @@ export default async function AboutPage() {
 
       {/* Story */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
-        <div className="rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/20 dark:to-orange-900/20 h-96 flex items-center justify-center overflow-hidden relative">
+        <div className="rounded-xl bg-neutral-100 dark:bg-neutral-800 h-96 flex items-center justify-center overflow-hidden relative">
           {about.storyImage ? (
             <Image
               src={about.storyImage}
@@ -35,11 +35,11 @@ export default async function AboutPage() {
               className="object-cover"
             />
           ) : (
-            <ChefHat className="h-32 w-32 text-amber-600 opacity-40" />
+            <ChefHat className="h-24 w-24 text-neutral-300 dark:text-neutral-600" />
           )}
         </div>
         <div>
-          <h2 className="text-3xl font-bold text-neutral-900 dark:text-white mb-4">Our Story</h2>
+          <h2 className="font-display text-3xl text-neutral-900 dark:text-white mb-4">Our Story</h2>
           <div className="flex flex-col gap-4 text-neutral-600 dark:text-neutral-400">
             {about.storyParagraphs.map((p, i) => (
               <p key={i}>{p}</p>
@@ -50,7 +50,7 @@ export default async function AboutPage() {
 
       {/* Values */}
       <div className="mb-20">
-        <h2 className="text-3xl font-bold text-neutral-900 dark:text-white text-center mb-12">
+        <h2 className="font-display text-3xl text-neutral-900 dark:text-white text-center mb-12">
           What Sets Us Apart
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -59,12 +59,12 @@ export default async function AboutPage() {
             return (
               <div
                 key={`${v.title}-${i}`}
-                className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 text-center"
+                className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 text-center"
               >
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-amber-100 dark:bg-amber-900/30 mb-4">
-                  <Icon className="h-7 w-7 text-amber-600" />
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-amber-50 dark:bg-amber-900/20 mb-4">
+                  <Icon className="h-6 w-6 text-amber-700" />
                 </div>
-                <h3 className="font-semibold text-neutral-900 dark:text-white mb-2">{v.title}</h3>
+                <h3 className="font-display text-lg text-neutral-900 dark:text-white mb-2">{v.title}</h3>
                 <p className="text-sm text-neutral-500 leading-relaxed">{v.description}</p>
               </div>
             );
@@ -73,35 +73,36 @@ export default async function AboutPage() {
       </div>
 
       {/* CTA */}
-      <div className="rounded-2xl bg-gradient-to-br from-neutral-950 to-amber-950 p-12 text-center relative overflow-hidden">
+      <div className="rounded-xl bg-neutral-950 p-12 text-center relative overflow-hidden">
         {about.heroImage && (
-          <div className="absolute inset-0 opacity-20">
+          <>
             <Image
               src={about.heroImage}
               alt=""
               fill
               sizes="100vw"
-              className="object-cover"
+              className="object-cover opacity-30"
             />
-          </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 to-black/40" />
+          </>
         )}
         <div className="relative">
-          <h2 className="text-3xl font-bold text-white mb-4">{about.ctaTitle}</h2>
-          <p className="text-neutral-300 mb-8 max-w-xl mx-auto whitespace-pre-line">
+          <h2 className="font-display text-3xl text-white mb-4">{about.ctaTitle}</h2>
+          <p className="text-neutral-200 mb-8 max-w-xl mx-auto whitespace-pre-line">
             {about.ctaText}
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a
               href="/services"
-              className="inline-flex items-center justify-center h-12 px-8 font-medium rounded-xl bg-amber-500 text-white hover:bg-amber-400 transition-colors"
+              className="inline-flex items-center justify-center h-12 px-6 text-sm font-medium rounded-lg bg-amber-700 text-white hover:bg-amber-800 transition-colors"
             >
-              View Packages
+              View packages
             </a>
             <a
               href="/contact"
-              className="inline-flex items-center justify-center h-12 px-8 font-medium rounded-xl border border-white/20 text-white hover:bg-white/10 transition-colors"
+              className="inline-flex items-center justify-center h-12 px-6 text-sm font-medium rounded-lg border border-white/30 text-white hover:bg-white/10 transition-colors"
             >
-              Contact Us
+              Contact us
             </a>
           </div>
         </div>

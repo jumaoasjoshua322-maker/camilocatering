@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
@@ -13,7 +14,12 @@ const navLinks = [
   { href: "/contact", label: "Contact" },
 ];
 
-export function Navbar() {
+interface Props {
+  logoUrl?: string;
+  brandName?: string;
+}
+
+export function Navbar({ logoUrl, brandName = "Camilo's Catering" }: Props) {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -29,18 +35,19 @@ export function Navbar() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 via-orange-600 to-amber-700 flex items-center justify-center shadow-sm ring-1 ring-amber-200/70 dark:ring-amber-900/50">
-              <ChefHat className="h-5 w-5 text-white" />
-            </div>
-            <div className="hidden sm:flex flex-col leading-none">
-              <span className="text-base font-extrabold tracking-tight text-neutral-950 dark:text-white">
-                Camilo&apos;s
+          <Link href="/" className="flex items-center gap-2.5">
+            {logoUrl ? (
+              <span className="relative h-9 w-9 overflow-hidden rounded-lg bg-neutral-100 dark:bg-neutral-800">
+                <Image src={logoUrl} alt="" fill sizes="36px" className="object-cover" />
               </span>
-              <span className="mt-0.5 text-xs font-semibold uppercase tracking-[0.18em] text-amber-600">
-                Catering
+            ) : (
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-amber-700 text-white shadow-sm">
+                <ChefHat className="h-4 w-4" />
               </span>
-            </div>
+            )}
+            <span className="hidden sm:inline font-display text-lg font-semibold tracking-tight text-neutral-950 dark:text-white">
+              {brandName}
+            </span>
           </Link>
 
           {/* Desktop nav */}
@@ -122,7 +129,7 @@ export function Navbar() {
                 </Link>
                 <Link
                   href="/register"
-                  className="px-4 py-2 text-sm font-medium rounded-xl bg-amber-600 text-white hover:bg-amber-700 transition-colors shadow-sm"
+                  className="px-4 py-2 text-sm font-medium rounded-lg bg-amber-700 text-white hover:bg-amber-800 transition-colors shadow-sm"
                 >
                   Book Now
                 </Link>
@@ -157,7 +164,7 @@ export function Navbar() {
                 <Link href="/login" onClick={() => setMobileOpen(false)} className="flex-1 text-center py-2 text-sm font-medium text-neutral-600 border border-neutral-200 rounded-lg dark:border-neutral-700 dark:text-neutral-400">
                   Sign In
                 </Link>
-                <Link href="/register" onClick={() => setMobileOpen(false)} className="flex-1 text-center py-2 text-sm font-medium bg-amber-600 text-white rounded-lg hover:bg-amber-700">
+                <Link href="/register" onClick={() => setMobileOpen(false)} className="flex-1 text-center py-2 text-sm font-medium bg-amber-700 text-white rounded-lg hover:bg-amber-800">
                   Book Now
                 </Link>
               </div>

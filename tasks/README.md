@@ -13,6 +13,8 @@ operating profiles for the agent.
 - **`profiles/`** — alternate `CLAUDE.md` profiles. Copy a profile over
   the root `CLAUDE.md` to switch operating modes, or reference one in a
   user prompt ("operate under strict-production profile").
+  See `profiles/RATIONALE.md` for the failure modes that drove specific
+  rules in the root manual.
 
 ## When to update
 

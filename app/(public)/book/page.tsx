@@ -6,13 +6,13 @@ interface Props {
   searchParams: Promise<{ packageId?: string }>;
 }
 
-export const metadata = { title: "Book a Service - Camilo's Catering" };
+export const metadata = { title: "Book a Service" };
 
 export default async function BookingPage({ searchParams }: Props) {
   const { packageId } = await searchParams;
 
   await connectDB();
-  const packages = await Package.find({ isActive: true }).sort({ price: 1 }).lean();
+  const packages = await Package.find({ isActive: true }).sort({ isFeatured: -1, price: 1 }).lean();
 
   if (packages.length === 0) {
     return (
@@ -31,15 +31,23 @@ export default async function BookingPage({ searchParams }: Props) {
     minGuests: p.minGuests,
     maxGuests: p.maxGuests,
     inclusions: p.inclusions,
+    imageUrl: p.imageUrl,
+    isFeatured: p.isFeatured,
   }));
 
   return (
-    <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12">
-      <div className="mb-8 text-center">
-        <p className="text-sm text-amber-600 font-medium mb-2">Ready to celebrate?</p>
-        <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Book a Catering Service</h1>
-        <p className="text-neutral-500 mt-2">Select a package and fill in your event details below.</p>
-      </div>
+    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+      <header className="mb-8 max-w-2xl">
+        <p className="text-xs uppercase tracking-[0.18em] text-amber-700 font-semibold mb-2">
+          Book your event
+        </p>
+        <h1 className="font-display text-4xl sm:text-5xl text-neutral-900 dark:text-white mb-3">
+          Let's plan something memorable
+        </h1>
+        <p className="text-neutral-500">
+          Choose a package, share your event details, and we'll confirm within 24 hours.
+        </p>
+      </header>
       <BookingForm packages={serialized} defaultPackageId={packageId} />
     </div>
   );

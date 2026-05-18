@@ -240,15 +240,17 @@ function BookingListInner({ role }: Props) {
 
       {/* Filters */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-1 flex-wrap">
-          <FilterPillButton active={statusParam === ""} onClick={() => setStatus("")}>
-            All ({total})
-          </FilterPillButton>
-          {STATUS_OPTIONS.map((s) => (
-            <FilterPillButton key={s} active={statusParam === s} onClick={() => setStatus(s)}>
-              {s}
+        <div className="-mx-4 sm:mx-0 overflow-x-auto flex-1 min-w-0">
+          <div className="flex items-center gap-1 px-4 sm:px-0 min-w-max sm:min-w-0 sm:flex-wrap">
+            <FilterPillButton active={statusParam === ""} onClick={() => setStatus("")}>
+              All ({total})
             </FilterPillButton>
-          ))}
+            {STATUS_OPTIONS.map((s) => (
+              <FilterPillButton key={s} active={statusParam === s} onClick={() => setStatus(s)}>
+                {s}
+              </FilterPillButton>
+            ))}
+          </div>
         </div>
         {!loading && lastRefresh && <LiveIndicator since={lastRefresh} />}
       </div>

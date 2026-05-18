@@ -27,7 +27,16 @@ export const packageSchema = z.object({
   minGuests: z.coerce.number().int().positive("Min guests must be positive"),
   maxGuests: z.coerce.number().int().positive("Max guests must be positive"),
   inclusions: z.array(z.string().trim().min(1).max(200)).min(1, "At least one inclusion required").max(30),
-  imageUrl: z.string().url().optional().or(z.literal("")),
+  imageUrl: z
+    .string()
+    .trim()
+    .max(2000)
+    .refine(
+      (v) => v === "" || /^https?:\/\//i.test(v) || v.startsWith("/"),
+      "Must be a URL or a path starting with /"
+    )
+    .optional()
+    .or(z.literal("")),
   isFeatured: z.boolean().optional(),
 }).refine((d) => d.maxGuests >= d.minGuests, {
   message: "Max guests must be >= min guests",

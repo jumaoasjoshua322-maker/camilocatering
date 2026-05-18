@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ImageUploadField } from "@/components/ui/image-upload";
 import { useForm } from "@/lib/use-form";
 import { packageSchema } from "@/lib/validations";
 import type { PackageData } from "./package-manager";
@@ -52,6 +53,8 @@ export function PackageFormModal({ open, onClose, editing, onSaved }: Props) {
   const [error, setError] = useState("");
   const [inclusions, setInclusions] = useState<string[]>([""]);
   const [inclusionError, setInclusionError] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [isFeatured, setIsFeatured] = useState(false);
 
   const { values, errors, handleChange, setValue, reset, setValues } =
     useForm({
@@ -74,9 +77,13 @@ export function PackageFormModal({ open, onClose, editing, onSaved }: Props) {
         maxGuests: editing.maxGuests,
       });
       setInclusions(editing.inclusions.length > 0 ? editing.inclusions : [""]);
+      setImageUrl(editing.imageUrl || "");
+      setIsFeatured(editing.isFeatured ?? false);
     } else {
       reset();
       setInclusions([""]);
+      setImageUrl("");
+      setIsFeatured(false);
     }
     setError("");
     setInclusionError("");
@@ -151,6 +158,8 @@ export function PackageFormModal({ open, onClose, editing, onSaved }: Props) {
       minGuests: Number(values.minGuests),
       maxGuests: Number(values.maxGuests),
       inclusions: cleanInclusions,
+      imageUrl,
+      isFeatured,
     };
 
     // Validate the full payload, not just the form-state fields,
@@ -237,6 +246,33 @@ export function PackageFormModal({ open, onClose, editing, onSaved }: Props) {
                 </p>
               )}
             </div>
+
+            {/* Photo */}
+            <ImageUploadField
+              label="Photo"
+              aspect="video"
+              hint="Landscape works best. Used on the public services page and search."
+              value={imageUrl}
+              onChange={setImageUrl}
+            />
+
+            {/* Featured */}
+            <label className="flex items-start gap-3 rounded-lg border border-neutral-200 dark:border-neutral-800 p-3 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-900">
+              <input
+                type="checkbox"
+                checked={isFeatured}
+                onChange={(e) => setIsFeatured(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-amber-700 focus:ring-amber-500"
+              />
+              <div>
+                <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                  Featured package
+                </p>
+                <p className="text-xs text-neutral-500">
+                  Promotes this package to the top of /services with a "Most popular" tag.
+                </p>
+              </div>
+            </label>
 
             {/* Description */}
             <div className="flex flex-col gap-1.5">

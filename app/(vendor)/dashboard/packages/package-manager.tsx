@@ -19,7 +19,9 @@ export interface PackageData {
   minGuests: number;
   maxGuests: number;
   inclusions: string[];
+  imageUrl?: string;
   isActive: boolean;
+  isFeatured?: boolean;
 }
 
 const categoryColors: Record<PackageCategory, "default" | "success" | "warning" | "neutral" | "danger"> = {

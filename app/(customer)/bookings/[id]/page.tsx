@@ -21,6 +21,7 @@ import { CancelBookingButton } from "./cancel-booking-button";
 import { CancellationRequestButton } from "./cancellation-request-button";
 import { BookingAutoRefresh } from "./booking-auto-refresh";
 import { StatusHelp } from "@/components/ui/status-help";
+import { DemoBanner } from "@/components/shared/demo-banner";
 import type { BookingStatus } from "@/types";
 
 const statusVariant: Record<BookingStatus, "default" | "success" | "warning" | "danger" | "neutral"> = {
@@ -203,6 +204,7 @@ export default async function BookingDetailPage({ params }: Props) {
               )}
 
               {/* CONFIRMED — pay action */}
+              {canPay && <DemoBanner variant="booking" />}
               {canPay && <PaymentButton bookingId={id} amount={booking.totalAmount} />}
 
               {/* PAID — success block */}

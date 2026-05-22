@@ -23,6 +23,7 @@ see [Status](#status) below.
 | Webhook signature verification + idempotency | Implemented |
 | Admin CMS for About / Contact / Homepage | Implemented |
 | Analytics with date-range filters | Implemented |
+| Vitest suite on security-critical pure functions | Implemented (32 tests) |
 | **PayMongo online payments** | **Stub.** Gated by `ENABLE_LOCAL_PAYMENT=1`; returns 503 in any other environment. Real flow not yet wired. |
 | **Email (booking confirmation, contact form)** | **Logged in dev** if SMTP isn't configured; nodemailer-ready when `SMTP_*` env vars are set. |
 | **Email verification & password reset** | **Not implemented.** |
@@ -176,7 +177,20 @@ npm run dev      # local server
 npm run build    # production build
 npm run lint     # eslint
 npx tsc --noEmit # type-check only
+npm test         # run unit tests (vitest)
 npm run seed     # reseed demo data (refuses in production)
+```
+
+### Tests
+
+A small Vitest suite lives in `tests/`. Coverage is deliberately scoped
+to security-critical pure functions (image magic-byte sniffing, Zod
+input schemas, same-origin CSRF guard). See `tests/README.md` for the
+philosophy.
+
+```bash
+npm test         # one-shot
+npm run test:watch
 ```
 
 ---

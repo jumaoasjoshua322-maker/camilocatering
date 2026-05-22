@@ -45,8 +45,10 @@ async function ensureDir(dir: string) {
  * Inspect the leading magic bytes to confirm the file matches what the
  * client claimed. Defends against trivial type spoofing where someone
  * uploads HTML/SVG/JS as `image/png`.
+ *
+ * Exported for tests; production callers go through `uploadImage`.
  */
-function detectImageMime(buf: Buffer): string | null {
+export function detectImageMime(buf: Buffer): string | null {
   if (buf.length < 12) return null;
   // JPEG: FF D8 FF
   if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return "image/jpeg";

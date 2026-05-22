@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "@/lib/use-form";
@@ -46,8 +46,11 @@ function LoginForm() {
       return;
     }
 
-    const sessionRes = await fetch("/api/auth/session");
-    const session = await sessionRes.json();
+    // Use NextAuth's helper instead of a raw fetch + .json(). The helper
+    // handles content-type quirks, redirects, and returns null on any
+    // parsing failure — preventing the "Unexpected token '<'" error that
+    // happens when the endpoint briefly returns HTML.
+    const session = await getSession().catch(() => null);
     const role = session?.user?.role;
     const fallbackUrl = role === "ADMIN" || role === "STAFF" ? "/dashboard" : "/bookings";
 

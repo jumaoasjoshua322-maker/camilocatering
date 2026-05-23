@@ -9,25 +9,31 @@ interface Props {
 }
 
 /**
- * Demo-mode disclaimer. Only renders when payments are not wired
- * (ENABLE_LOCAL_PAYMENT is unset). On a real production deploy with
- * PayMongo configured, this disappears.
+ * Portfolio-demo disclaimer.
+ *
+ * Renders whenever the demo mode is on (`ENABLE_LOCAL_PAYMENT=1`).
+ * Copy reflects the real state of the integration: PayMongo IS wired
+ * (test mode), and a "Mark as paid (demo)" shortcut is available so a
+ * reviewer doesn't need a Filipino e-wallet to walk the full flow.
+ *
+ * Setting ENABLE_LOCAL_PAYMENT to anything other than "1" hides this
+ * banner and the demo shortcut, leaving only the real PayMongo path —
+ * which is the right shape for an actual production tenant.
  */
 export function DemoBanner({ variant = "homepage" }: Props) {
-  // Server-side env check. ENABLE_LOCAL_PAYMENT=1 means the local stub is
-  // active (dev only). Anything else means payments aren't wired.
-  if (process.env.ENABLE_LOCAL_PAYMENT === "1") return null;
+  if (process.env.ENABLE_LOCAL_PAYMENT !== "1") return null;
 
   if (variant === "booking") {
     return (
       <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
         <p className="font-medium flex items-center gap-1.5">
-          <Info className="h-4 w-4" /> Demo mode
+          <Info className="h-4 w-4" /> Portfolio demo
         </p>
         <p className="mt-1 text-xs leading-5">
-          This is a portfolio project. Online payments aren&apos;t connected, so
-          the Pay Now button will return a friendly error. The booking flow,
-          admin dashboard, and webhook handler are otherwise complete.
+          PayMongo is wired in test mode. Use card{" "}
+          <span className="font-mono">4343 4343 4343 4345</span> on the
+          checkout page, or click <span className="font-medium">Mark as paid (demo)</span>{" "}
+          below to skip the wallet step.
         </p>
       </div>
     );
@@ -39,8 +45,8 @@ export function DemoBanner({ variant = "homepage" }: Props) {
         <Info className="h-4 w-4 shrink-0" />
         <p className="leading-5">
           <span className="font-semibold">Portfolio demo.</span>{" "}
-          Booking and admin flows are fully functional. Online payments aren&apos;t
-          wired — the Pay Now button will show a friendly error.
+          Real bookings, admin flow, and PayMongo test-mode checkout — plus a
+          one-click &ldquo;Mark as paid&rdquo; shortcut so you don&apos;t need a wallet.
         </p>
       </div>
     </div>

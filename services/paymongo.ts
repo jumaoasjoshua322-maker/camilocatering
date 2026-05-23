@@ -2,8 +2,8 @@
  * PayMongo HTTP client.
  *
  * We use the Checkout Sessions API: PayMongo hosts the full payment UI
- * (card / GCash / PayMaya), handles 3DS, and notifies us via webhook
- * when payment succeeds. The webhook handler in
+ * (card / GCash / PayMaya / QRPh), handles 3DS, and notifies us via
+ * webhook when payment succeeds. The webhook handler in
  * `app/api/payments/webhook/route.ts` is the source of truth for
  * flipping a booking to PAID — never trust the success_url redirect.
  *
@@ -48,6 +48,21 @@ export interface CheckoutSession {
 }
 
 /**
+ * QRPh payment method has a per-transaction maximum of PHP 50,000
+ * (5,000,000 centavos). Above that, scanning will be rejected by the
+ * customer's bank, so we omit it from the payment options entirely.
+ *
+ * @see https://developers.paymongo.com/docs/qrph
+ */
+const QRPH_MAX_CENTAVOS = 5_000_000;
+
+function methodsForAmount(amount: number): string[] {
+  const methods = ["card", "gcash", "paymaya"];
+  if (amount <= QRPH_MAX_CENTAVOS) methods.push("qrph");
+  return methods;
+}
+
+/**
  * Create a hosted checkout session and return the URL to redirect to.
  *
  * Amount is in centavos (smallest currency unit), per PayMongo convention.
@@ -77,7 +92,7 @@ export async function createCheckoutSession(
               quantity: input.lineItem.quantity,
             },
           ],
-          payment_method_types: ["card", "gcash", "paymaya"],
+          payment_method_types: methodsForAmount(input.amount),
           description: input.description,
           success_url: input.successUrl,
           cancel_url: input.cancelUrl,

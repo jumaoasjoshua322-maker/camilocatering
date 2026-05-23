@@ -205,7 +205,13 @@ export default async function BookingDetailPage({ params }: Props) {
 
               {/* CONFIRMED — pay action */}
               {canPay && <DemoBanner variant="booking" />}
-              {canPay && <PaymentButton bookingId={id} amount={booking.totalAmount} />}
+              {canPay && (
+                <PaymentButton
+                  bookingId={id}
+                  amount={booking.totalAmount}
+                  demoMode={process.env.ENABLE_LOCAL_PAYMENT === "1"}
+                />
+              )}
 
               {/* PAID — success block */}
               {status === "PAID" && (

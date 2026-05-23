@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
 const ADMIN_ROUTES = ["/dashboard"];
-const CUSTOMER_ROUTES = ["/bookings", "/checkout"];
+const CUSTOMER_ROUTES = ["/bookings"];
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;

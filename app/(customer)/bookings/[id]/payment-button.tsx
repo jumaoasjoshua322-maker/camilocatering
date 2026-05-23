@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 
@@ -10,8 +9,13 @@ interface Props {
   amount: number;
 }
 
+interface CheckoutResponse {
+  success: boolean;
+  data?: { checkoutUrl?: string; sessionId?: string };
+  error?: string;
+}
+
 export function PaymentButton({ bookingId, amount }: Props) {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -26,17 +30,18 @@ export function PaymentButton({ bookingId, amount }: Props) {
         body: JSON.stringify({ bookingId }),
       });
 
-      const data = await res.json();
+      const data = (await res.json().catch(() => null)) as CheckoutResponse | null;
 
-      if (!res.ok) {
-        setError(data.error || "Failed to initialize payment");
+      if (!res.ok || !data?.success || !data.data?.checkoutUrl) {
+        setError(data?.error || "Failed to start payment. Please try again.");
         setLoading(false);
         return;
       }
 
-      router.refresh();
-    } catch (err) {
-      setError("Payment failed");
+      // External redirect — must be a full navigation, not router.push.
+      window.location.href = data.data.checkoutUrl;
+    } catch {
+      setError("Network error. Please try again.");
       setLoading(false);
     }
   }
@@ -48,12 +53,7 @@ export function PaymentButton({ bookingId, amount }: Props) {
           {error}
         </div>
       )}
-      <Button
-        onClick={handlePayment}
-        loading={loading}
-        size="lg"
-        className="w-full"
-      >
+      <Button onClick={handlePayment} loading={loading} size="lg" className="w-full">
         Pay {formatCurrency(amount)}
       </Button>
       <p className="text-xs text-center text-neutral-400">

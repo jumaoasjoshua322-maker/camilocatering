@@ -2,10 +2,12 @@ import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
 import Booking from "@/models/Booking";
 import Payment from "@/models/Payment";
+import User from "@/models/User";
 import { requireAuth } from "@/lib/rbac";
 import { isValidObjectId } from "@/lib/mongo";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { isSameOrigin } from "@/lib/security";
+import { createCheckoutSession } from "@/services/paymongo";
 import {
   successResponse,
   errorResponse,
@@ -15,34 +17,33 @@ import {
 } from "@/lib/api-response";
 
 /**
- * Temporary local payment endpoint.
+ * Create a PayMongo Checkout Session and return its hosted URL.
  *
- * Real PayMongo integration is intentionally not wired here yet. This route
- * is gated behind ENABLE_LOCAL_PAYMENT=1 and is meant strictly for dev work.
- * It will return 503 in any environment that does not opt in, so a misconfigured
- * production deploy cannot mark bookings PAID without a real payment.
+ * Flow:
+ *   1. Customer clicks Pay on a CONFIRMED booking
+ *   2. We create a Checkout Session, persist a PENDING Payment row tied
+ *      to the PaymentIntent ID, return the checkout URL
+ *   3. Client navigates to PayMongo's hosted page
+ *   4. PayMongo emits `payment.paid` to our webhook on success
+ *   5. The webhook flips the booking to PAID — NOT this route
  *
- * When PayMongo is wired up:
- *   - replace this body with a paymongo.createPaymentIntent call
- *   - return { clientKey } so the client can confirm with Card / GCash / PayMaya
- *   - keep the booking in CONFIRMED until the webhook flips it to PAID
+ * The booking status is intentionally not changed here. If the customer
+ * abandons checkout the booking stays CONFIRMED and they can retry.
+ * Trusting the success_url redirect to flip status would let anyone with
+ * the URL forge a paid booking.
  */
 export async function POST(req: NextRequest) {
   try {
     if (!isSameOrigin(req)) return forbiddenResponse();
 
-    if (process.env.ENABLE_LOCAL_PAYMENT !== "1") {
-      return errorResponse(
-        "Online payments are temporarily unavailable. Please contact us to complete your booking.",
-        503
-      );
-    }
-
     const user = await requireAuth();
     if (!user) return unauthorizedResponse();
+
     const ip = getClientIp(req);
     const limited = await rateLimit(`payment:${ip}:${user.id}`, 20, 15 * 60 * 1000);
-    if (!limited.allowed) return errorResponse("Too many payment attempts. Please try again later.", 429);
+    if (!limited.allowed) {
+      return errorResponse("Too many payment attempts. Please try again later.", 429);
+    }
 
     const body = (await req.json()) as { bookingId?: unknown };
     const bookingId = body?.bookingId;
@@ -51,25 +52,43 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
 
-    const booking = await Booking.findById(bookingId);
+    const booking = await Booking.findById(bookingId).populate("packageId", "name");
     if (!booking) return notFoundResponse("Booking");
-
     if (booking.customerId.toString() !== user.id) return forbiddenResponse();
 
     if (booking.status === "PAID" || booking.status === "COMPLETED") {
-      return successResponse({
-        bookingId: booking._id.toString(),
-        paymentId: booking.paymentId?.toString(),
-        status: booking.status,
-        amount: booking.totalAmount,
-        mode: "local",
-      });
+      return errorResponse("This booking is already paid", 409);
     }
-
     if (booking.status !== "CONFIRMED") {
       return errorResponse("Only confirmed bookings can be paid");
     }
 
+    const customer = (await User.findById(user.id).lean()) as
+      | { name?: string; email?: string; phone?: string }
+      | null;
+    const pkg = booking.packageId as unknown as { name?: string };
+    const origin = new URL(req.url).origin;
+
+    const session = await createCheckoutSession({
+      amount: Math.round(booking.totalAmount * 100), // PHP -> centavos
+      description: `Booking #${booking._id.toString().slice(-8).toUpperCase()} — ${pkg?.name ?? "Package"}`,
+      successUrl: `${origin}/bookings/${booking._id.toString()}?payment=success`,
+      cancelUrl: `${origin}/bookings/${booking._id.toString()}?payment=cancelled`,
+      metadata: { bookingId: booking._id.toString() },
+      billing: {
+        name: customer?.name,
+        email: customer?.email,
+        phone: customer?.phone,
+      },
+      lineItem: { name: pkg?.name ?? "Catering package", quantity: 1 },
+    });
+
+    const paymentIntentId = session.attributes.payment_intent?.id;
+
+    // Persist (or update) the Payment row so the webhook can correlate
+    // the incoming `payment.paid` event back to a booking via the
+    // PaymentIntent id. Reusing an existing PENDING row prevents
+    // duplicate inserts when the customer clicks Pay multiple times.
     let payment = await Payment.findOne({ bookingId });
     if (!payment) {
       payment = await Payment.create({
@@ -77,34 +96,21 @@ export async function POST(req: NextRequest) {
         customerId: user.id,
         amount: booking.totalAmount,
         currency: "php",
-        status: "SUCCEEDED",
-        metadata: { mode: "local" },
+        status: "PENDING",
+        paymongoPaymentIntentId: paymentIntentId,
+        metadata: { checkoutSessionId: session.id },
       });
     } else {
-      payment.status = "SUCCEEDED";
+      payment.paymongoPaymentIntentId = paymentIntentId;
+      payment.status = "PENDING";
       payment.amount = booking.totalAmount;
-      payment.currency = "php";
-      payment.metadata = { mode: "local" };
+      payment.metadata = { checkoutSessionId: session.id };
       await payment.save();
     }
 
-    // CAS: only update if still CONFIRMED.
-    const updated = await Booking.findOneAndUpdate(
-      { _id: bookingId, status: "CONFIRMED" },
-      { $set: { status: "PAID", paymentId: payment._id, paidAt: new Date() } },
-      { new: true }
-    );
-
-    if (!updated) {
-      return errorResponse("Booking is no longer payable. Refresh and try again.", 409);
-    }
-
     return successResponse({
-      bookingId: updated._id.toString(),
-      paymentId: payment._id.toString(),
-      status: updated.status,
-      amount: payment.amount,
-      mode: "local",
+      checkoutUrl: session.attributes.checkout_url,
+      sessionId: session.id,
     });
   } catch (err) {
     console.error("[PAYMENT_CREATE]", err);

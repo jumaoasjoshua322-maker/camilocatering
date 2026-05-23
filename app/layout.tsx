@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
 import { SessionProvider } from "@/components/shared/session-provider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -26,7 +25,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.variable} ${display.variable} font-sans antialiased`}>
         <SessionProvider>
           {children}
-          <Toaster />
         </SessionProvider>
       </body>
     </html>

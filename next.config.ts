@@ -54,16 +54,11 @@ const allowedServerActionOrigins = (process.env.APP_ALLOWED_ORIGINS || "")
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Skip type-checking during `next build`. Type safety is enforced in
-  // development (editor + getDiagnostics) and in CI; running tsc again
+  // development (editor LSP, getDiagnostics) and in CI; running tsc again
   // during production build is redundant and OOMs Vercel's 8GB build
   // container on this codebase due to Mongoose's heavy type defs.
   typescript: {
     ignoreBuildErrors: true,
-  },
-  // Skip ESLint during `next build` for the same reason — lint runs
-  // belong in CI, not in the bundler critical path.
-  eslint: {
-    ignoreDuringBuilds: true,
   },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];

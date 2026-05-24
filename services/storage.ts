@@ -1,11 +1,23 @@
-import { mkdir, writeFile, unlink, stat } from "node:fs/promises";
-import { join } from "node:path";
+import { v2 as cloudinary } from "cloudinary";
 import { randomBytes } from "node:crypto";
 
 /**
- * Storage abstraction. Today: writes to /public/uploads.
- * Swap this single file to move to Vercel Blob / Cloudinary / S3
- * without touching any callers.
+ * Image storage abstraction backed by Cloudinary.
+ *
+ * Why Cloudinary:
+ * - Vercel's runtime filesystem is read-only and ephemeral, so writing
+ *   uploads to /public/uploads doesn't survive deploys.
+ * - Cloudinary's free tier covers 25 GB storage + 25 GB monthly bandwidth,
+ *   plenty for a single-tenant portfolio site.
+ * - Their CDN serves WebP/AVIF automatically to modern browsers, so we
+ *   get image optimization for free.
+ *
+ * Configuration is lazy: cloudinary.config() runs on first call so
+ * importing this module during `next build` doesn't crash on missing env.
+ *
+ * The exported API (uploadImage, deleteAsset, detectImageMime,
+ * ALLOWED_IMAGE_MIME, MAX_IMAGE_BYTES) matches the previous local-disk
+ * implementation, so no caller code needs to change.
  */
 
 export const ALLOWED_IMAGE_MIME = new Set([
@@ -17,28 +29,37 @@ export const ALLOWED_IMAGE_MIME = new Set([
 
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
-const EXT_BY_MIME: Record<string, string> = {
-  "image/jpeg": ".jpg",
-  "image/png": ".png",
-  "image/webp": ".webp",
-  "image/gif": ".gif",
-};
-
-const PUBLIC_UPLOADS_DIR = join(process.cwd(), "public", "uploads");
-const PUBLIC_URL_PREFIX = "/uploads";
-
 export interface UploadResult {
   url: string;
   bytes: number;
   contentType: string;
 }
 
-async function ensureDir(dir: string) {
-  try {
-    await stat(dir);
-  } catch {
-    await mkdir(dir, { recursive: true });
+/**
+ * Cloudinary "folder" for everything this app uploads. Keeps the
+ * dashboard organized and makes deleteAsset's URL parser simple.
+ */
+const CLOUDINARY_FOLDER = "camilo-catering";
+
+let configured = false;
+
+function configure() {
+  if (configured) return;
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const apiKey = process.env.CLOUDINARY_API_KEY;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET;
+  if (!cloudName || !apiKey || !apiSecret) {
+    throw new Error(
+      "Cloudinary is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET."
+    );
   }
+  cloudinary.config({
+    cloud_name: cloudName,
+    api_key: apiKey,
+    api_secret: apiSecret,
+    secure: true,
+  });
+  configured = true;
 }
 
 /**
@@ -81,30 +102,48 @@ export async function uploadImage(file: File): Promise<UploadResult> {
     throw new Error("File contents do not match declared image type");
   }
 
-  await ensureDir(PUBLIC_UPLOADS_DIR);
+  configure();
 
-  const ext = EXT_BY_MIME[detected];
-  const name = `${Date.now()}-${randomBytes(6).toString("hex")}${ext}`;
-  await writeFile(join(PUBLIC_UPLOADS_DIR, name), buffer);
+  const publicId = `${Date.now()}-${randomBytes(6).toString("hex")}`;
+  // Cloudinary accepts a base64 data URI for inline buffer uploads —
+  // simpler than streaming and works inside Vercel's serverless runtime.
+  const dataUri = `data:${detected};base64,${buffer.toString("base64")}`;
+
+  const result = await cloudinary.uploader.upload(dataUri, {
+    folder: CLOUDINARY_FOLDER,
+    public_id: publicId,
+    resource_type: "image",
+    overwrite: false,
+  });
 
   return {
-    url: `${PUBLIC_URL_PREFIX}/${name}`,
+    url: result.secure_url,
     bytes: file.size,
     contentType: detected,
   };
 }
 
 /**
- * Best-effort delete. Only deletes assets we own (under /uploads).
- * Silently ignores missing files and external URLs.
+ * Best-effort delete. Recognizes Cloudinary URLs we own (under the
+ * configured folder) and ignores anything else (legacy /uploads paths,
+ * external Unsplash URLs, etc.).
+ *
+ * Cloudinary URLs look like:
+ *   https://res.cloudinary.com/<cloud>/image/upload/v1234567/<folder>/<id>.jpg
+ * We need the public_id `<folder>/<id>` (no extension, no version) to
+ * call destroy().
  */
 export async function deleteAsset(url?: string | null): Promise<void> {
-  if (!url || !url.startsWith(PUBLIC_URL_PREFIX + "/")) return;
-  const filename = url.slice(PUBLIC_URL_PREFIX.length + 1);
-  if (filename.includes("/") || filename.includes("\\") || filename.includes("..")) return;
+  if (!url) return;
+  const match = url.match(
+    new RegExp(`/upload/(?:v\\d+/)?(${CLOUDINARY_FOLDER}/[^.]+)`)
+  );
+  if (!match) return;
+
+  configure();
   try {
-    await unlink(join(PUBLIC_UPLOADS_DIR, filename));
+    await cloudinary.uploader.destroy(match[1]);
   } catch {
-    /* ignore */
+    /* asset may already be gone; nothing to do */
   }
 }
